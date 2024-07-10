@@ -4,21 +4,20 @@ import config from '../custom-application-config';
 const axios = require('axios');
 
 class PowerboardApiAdaptor {
-  constructor(isLive, isToken, secretKey, env) {
+  constructor(isLive, isToken, secretKey, notificationUrl) {
     this.apiUrl = isLive ? API_LIVE_URL : API_SANDBOX_URL;
     this.isToken = isToken;
     this.secretKey = secretKey;
-    this.env = env;
+    this.notificationUrl = notificationUrl;
   }
 
 
   async registerNotifications() {
     const registeredEvents = await this.fetchRegisteredEvents();
-    const notificationUrl = null;
     NOTIFICATIONS.forEach((event) => {
-      if (notificationUrl && !registeredEvents.includes(event)) {
+      if (this.notificationUrl && !registeredEvents.includes(event)) {
         this.callToAPI('v1/notifications', 'POST', {
-          destination: this.env.notificationUrl,
+          destination: this.notificationUrl,
           type: 'webhook',
           event: event,
           transaction_only: false,
@@ -28,12 +27,11 @@ class PowerboardApiAdaptor {
   }
 
   async fetchRegisteredEvents() {
-    const notificationUrl = this.env.notificationUrl;
     const result = await this.callToAPI('v1/notifications', 'GET', null);
     let allNotifications = [];
     if (result) {
       allNotifications = result.data.resource.data;
-      return allNotifications.filter(notification => notification.destination === notificationUrl)
+      return allNotifications.filter(notification => notification.destination === this.notificationUrl)
         .map(notification => notification.event);
 
     }

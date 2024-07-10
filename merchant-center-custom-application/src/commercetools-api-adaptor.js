@@ -91,20 +91,29 @@ class CommerceToolsAPIAdapter {
       key: group ?? 'empty',
       value: data.value ?? null,
     };
-    this.updateAPINotification(group, data.value);
+    const notificationUrl = await this.getNotificationUrl();
+    this.updateAPINotification(group, data.value, notificationUrl);
     return await this.makeRequest('/custom-objects', 'POST', requestData);
   }
 
-  updateAPINotification(group, data) {
+  updateAPINotification(group, data, notificationUrl) {
     const isToken = 'access_key' === data.credentials_type;
     const isLive = group === 'live';
     let secretKey = isToken ? data.credentials_access_key : data.credentials_secret_key;
-    if (secretKey) {
-      const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, this.env);
+    if (secretKey && notificationUrl) {
+      const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, notificationUrl);
       powerboardApiAdaptor.registerNotifications().catch(error => {
         console.log(error.response.data.error)
       });
     }
+  }
+
+  async getNotificationUrl() {
+    let objectNotificationUrl =  await this.makeRequest('/custom-objects/powerboard-notification', 'GET');
+    if(objectNotificationUrl.results.length){
+      return objectNotificationUrl.results[0].value;
+    }
+    return null
   }
 
   async getConfigs(group) {
