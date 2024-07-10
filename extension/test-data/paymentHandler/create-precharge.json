@@ -1,0 +1,46 @@
+{
+  "customer": {
+    "first_name": "testCustomerFirstName",
+    "last_name": "testCustomerLastName",
+    "email": "testCustomerEmail@awesome-domain.com",
+    "phone": "+123456789012",
+    "payment_source": {
+      "gateway_id": null,
+      "address_line1": "awesomeStreet1",
+      "address_city": "AwesomeCity",
+      "address_state": "ACT",
+      "address_country": "AU",
+      "address_postcode": "4321"
+    }
+  },
+  "amount": 123.45,
+  "reference": null,
+  "currency": "AUD",
+  "country": "AU",
+  "meta": {
+    "store_name": "CommercetoolsE2ETests"
+  },
+  "shipping": {
+    "address_line1": "awesomeStreet1",
+    "address_city": "AwesomeCity",
+    "address_state": "ACT",
+    "address_country": "AU",
+    "address_postcode": "4321",
+    "contact": {
+      "first_name": "testCustomerFirstName",
+      "last_name": "testCustomerLastName",
+      "email": "testCustomerEmail@awesome-domain.com",
+      "phone": "+123456789012"
+    }
+  },
+  "items": [
+    {
+      "name": "CommercetoolsE2ETestsProduct",
+      "type": "CommercetoolsE2ETestsProductType",
+      "quantity": 1,
+      "item_uri": "https://my.awesome-domain.com/CommercetoolsE2ETestsProduct",
+      "image_uri": "https://my.awesome-domain.com/CommercetoolsE2ETestsProduct.png",
+      "amount": 123.45
+    }
+  ]
+}

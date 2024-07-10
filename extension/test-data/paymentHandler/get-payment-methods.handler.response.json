@@ -1,0 +1,14 @@
+{
+  "actions": [
+    {
+      "action": "setCustomField",
+      "name": "PaymentExtensionResponse",
+      "value": null
+    },
+    {
+      "action": "setCustomField",
+      "name": "PaymentExtensionRequest",
+      "value": null
+    }
+  ]
+}

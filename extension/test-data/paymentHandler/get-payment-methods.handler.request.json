@@ -1,0 +1,62 @@
+{
+  "action": "Create",
+  "resource": {
+    "typeId": "payment",
+    "id": "ee536ed3-379d-46f5-b98b-bc74f5dff277",
+    "obj": {
+      "id": "ee536ed3-379d-46f5-b98b-bc74f5dff277",
+      "version": 1,
+      "lastMessageSequenceNumber": 1,
+      "createdAt": "1970-01-01T00:00:00.000Z",
+      "lastModifiedAt": "1970-01-01T00:00:00.000Z",
+      "lastModifiedBy": {
+        "clientId": "clientId",
+        "isPlatformClient": false,
+        "anonymousId": "aeb87e55-5b90-4866-9677-38b9c7b430e9"
+      },
+      "createdBy": {
+        "clientId": "clientId",
+        "isPlatformClient": false,
+        "anonymousId": "aeb87e55-5b90-4866-9677-38b9c7b430e9"
+      },
+      "amountPlanned": {
+        "type": "centPrecision",
+        "currencyCode": "AUD",
+        "centAmount": 20000,
+        "fractionDigits": 2
+      },
+      "paymentMethodInfo": {
+        "paymentInterface": "Mock",
+        "method": "method",
+        "name": {
+          "en": "methodName"
+        }
+      },
+      "custom": {
+        "type": {
+          "typeId": "type",
+          "id": "d23a7345-317d-41cd-bb30-490f226d950b"
+        },
+        "fields": {
+          "CommercetoolsProjectKey": "CommercetoolsProjectKey",
+          "PaymentExtensionRequest": "{\"action\":\"getPaymentMethodsRequest\"}"
+        }
+      },
+      "paymentStatus": {},
+      "transactions": [
+        {
+          "id": "e8443386-f87a-4547-a6d4-8ad87c80b5bd",
+          "type": "Charge",
+          "amount": {
+            "type": "centPrecision",
+            "currencyCode": "AUD",
+            "centAmount": 20000,
+            "fractionDigits": 2
+          },
+          "state": "Initial"
+        }
+      ],
+      "interfaceInteractions": []
+    }
+  }
+}

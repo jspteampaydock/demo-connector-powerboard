@@ -1,0 +1,14 @@
+{
+  "key": "powerboard-order-extension",
+  "destination": {
+    "type": "HTTP",
+    "url": "${ctpPowerboardIntegrationBaseUrl}/create-order"
+  },
+  "triggers": [
+    {
+      "resourceTypeId": "order",
+      "actions": ["Create"]
+    }
+  ],
+  "timeoutInMs": 2000
+}

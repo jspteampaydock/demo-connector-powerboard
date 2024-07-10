@@ -1,0 +1,33 @@
+{
+  "amountPlanned": {
+    "centAmount": 12345,
+    "currencyCode": "AUD"
+  },
+  "custom": {
+    "fields": {
+      "CommercetoolsProjectKey": null,
+      "PaymentExtensionRequest": "{\"action\":\"getPaymentMethodsRequest\",\"request\":{}}"
+    },
+    "type": {
+      "key": "powerboard-components-payment-type",
+      "typeId": "type"
+    }
+  },
+  "paymentMethodInfo": {
+    "paymentInterface": "Mock",
+    "method": "powerboard-pay",
+    "name": {
+      "en": "Power Board"
+    }
+  },
+  "transactions": [
+    {
+      "type": "Charge",
+      "amount": {
+        "centAmount": 12345,
+        "currencyCode": "AUD"
+      },
+      "state": "Initial"
+    }
+  ]
+}
