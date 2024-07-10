@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import PropTypes from 'prop-types';
 import { useFormik } from 'formik';
@@ -14,7 +15,6 @@ import Spacings from '@commercetools-uikit/spacings';
 import messages from './messages';
 import styles from './live-connection.module.css';
 import './live-connection.css';
-import React, { useState, useEffect } from 'react';
 import { ContentNotification } from '@commercetools-uikit/notifications';
 import PulseLoader from 'react-spinners/PulseLoader';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';

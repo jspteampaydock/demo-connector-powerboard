@@ -1,7 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import PropTypes from 'prop-types';
 import { useFormik } from 'formik';
-import React, { useState, useEffect } from 'react';
 import Text from '@commercetools-uikit/text';
 import PrimaryButton from '@commercetools-uikit/primary-button';
 import SecondaryButton from '@commercetools-uikit/secondary-button';
@@ -35,7 +35,7 @@ const WidgetConfigurationForm = () => {
     const [version, setVersion] = useState(null);
     const [createdAt, setCreatedAt] = useState(null);
     const env = useApplicationContext(
-      (context) => context.environment,
+        (context) => context.environment,
     );
     const apiAdapter = new CommerceToolsAPIAdapter(env);
 
@@ -81,24 +81,16 @@ const WidgetConfigurationForm = () => {
         version_custom_version: '',
         payment_methods_cards_title: '',
         payment_methods_cards_description: '',
-        payment_methods_card_min_value: '',
-        payment_methods_card_max_value: '',
         payment_methods_bank_accounts_title: '',
         payment_methods_bank_accounts_description: '',
         payment_methods_wallets_apple_pay_title: '',
         payment_methods_wallets_apple_pay_description: '',
-        payment_methods_wallets_apple_pay_min_value: '',
-        payment_methods_wallets_apple_pay_max_value: '',
         payment_methods_wallets_google_pay_title: '',
         payment_methods_wallets_google_pay_description: '',
-        payment_methods_wallets_google_pay_min_value: '',
-        payment_methods_wallets_google_pay_max_value: '',
         payment_methods_wallets_afterpay_v2_title: '',
         payment_methods_wallets_afterpay_v2_description: '',
         payment_methods_wallets_paypal_title: '',
         payment_methods_wallets_paypal_description: '',
-        payment_methods_wallets_paypal_min_value: '',
-        payment_methods_wallets_paypal_max_value: '',
         payment_methods_alternative_payment_method_afterpay_v1_title: '',
         payment_methods_alternative_payment_method_afterpay_v1_description: '',
         payment_methods_alternative_payment_method_afterpay_v1_min_value: '',
@@ -179,10 +171,6 @@ const WidgetConfigurationForm = () => {
             setLoading(true);
 
             const fieldsToValidate = [
-                { min: values.payment_methods_card_min_value, max: values.payment_methods_card_max_value },
-                { min: values.payment_methods_wallets_apple_pay_min_value, max: values.payment_methods_wallets_apple_pay_max_value },
-                { min: values.payment_methods_wallets_google_pay_min_value, max: values.payment_methods_wallets_google_pay_max_value },
-                { min: values.payment_methods_wallets_paypal_min_value, max: values.payment_methods_wallets_paypal_max_value },
                 { min: values.payment_methods_alternative_payment_method_afterpay_v1_min_value, max: values.payment_methods_alternative_payment_method_afterpay_v1_max_value },
                 { min: values.payment_methods_alternative_payment_method_zippay_min_value, max: values.payment_methods_alternative_payment_method_zippay_max_value },
             ];
@@ -251,159 +239,111 @@ const WidgetConfigurationForm = () => {
     }, []);
 
     return (
-      <>
-          <div className={styles.paySettingsHead}>
-              <Text.Headline as="h1" intlMessage={messages.pageTitle} />
-              <Text.Body intlMessage={messages.pageSubtitle} />
+        <>
+            <div className={styles.paySettingsHead}>
+                <Text.Headline as="h1" intlMessage={messages.pageTitle} />
+                <Text.Body intlMessage={messages.pageSubtitle} />
 
-              <div className={styles.paySettingsButtonWrap}>
-                  {error && (
-                    <ContentNotification type="error">{error.message}</ContentNotification>
-                  )}
-                  {success && (
-                    <ContentNotification type="success">Your settings have been saved</ContentNotification>
-                  )}
-                  <div>
-                      {loading ? <PulseLoader color={'#36d7b7'} loading={loading} size={10} /> : (
-                        <>
-                            <SecondaryButton
-                              onClick={() => {
-                                  if (success) setSuccess(false);
-                                  if (error) setError(false);
-                                  formik.handleReset;
-                              }}
-                              isDisabled={formik.isSubmitting}
-                              label="Cancel"
+                <div className={styles.paySettingsButtonWrap}>
+                    {error && (
+                        <ContentNotification type="error">{error.message}</ContentNotification>
+                    )}
+                    {success && (
+                        <ContentNotification type="success">Your settings have been saved</ContentNotification>
+                    )}
+                    <div>
+                        {loading ? <PulseLoader color={'#36d7b7'} loading={loading} size={10} /> : (
+                            <>
+                                <SecondaryButton
+                                    onClick={() => {
+                                        if (success) setSuccess(false);
+                                        if (error) setError(false);
+                                        formik.handleReset;
+                                    }}
+                                    isDisabled={formik.isSubmitting}
+                                    label="Cancel"
+                                />
+                                <PrimaryButton
+                                    type="submit"
+                                    label="Save"
+                                    onClick={formik.handleSubmit}
+                                    isDisabled={formik.isSubmitting || !formik.dirty}
+                                />
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
+
+                <CollapsiblePanel header="Version" isDefaultClosed={false} className="collapsible-panel">
+                    <Constraints.Horizontal max={'scale'}>
+                        <Spacings.Stack scale="xl">
+
+                            <SelectField
+                                name="version_version"
+                                title={intl.formatMessage(messages.selectVersion)}
+                                isMulti={false}
+                                value={formik.values.version_version}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                options={version_version_options}
+                                isSearchable={false}
+                                isClearable={false}
+                                isRequired={false}
                             />
-                            <PrimaryButton
-                              type="submit"
-                              label="Save"
-                              onClick={formik.handleSubmit}
-                              isDisabled={formik.isSubmitting || !formik.dirty}
+
+                            <TextField
+                                name="version_custom_version"
+                                title={intl.formatMessage(messages.customVersion)}
+                                value={formik.values.version_custom_version}
+                                touched={formik.touched.version_custom_version}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                isRequired={false}
                             />
-                        </>
-                      )}
-                  </div>
-              </div>
-          </div>
 
-          <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}>
-
-              <CollapsiblePanel header="Version" isDefaultClosed={false} className="collapsible-panel">
-                  <Constraints.Horizontal max={'scale'}>
-                      <Spacings.Stack scale="xl">
-
-                          <SelectField
-                            name="version_version"
-                            title={intl.formatMessage(messages.selectVersion)}
-                            isMulti={false}
-                            value={formik.values.version_version}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            options={version_version_options}
-                            isSearchable={false}
-                            isClearable={false}
-                            isRequired={false}
-                          />
-
-                          <TextField
-                            name="version_custom_version"
-                            title={intl.formatMessage(messages.customVersion)}
-                            value={formik.values.version_custom_version}
-                            touched={formik.touched.version_custom_version}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            isRequired={false}
-                          />
-
-                      </Spacings.Stack>
-                  </Constraints.Horizontal>
-              </CollapsiblePanel>
+                        </Spacings.Stack>
+                    </Constraints.Horizontal>
+                </CollapsiblePanel>
 
 
-              <CollapsiblePanel header="Payment methods" isDefaultClosed={false} className="collapsible-panel">
-                  <Constraints.Horizontal max={'scale'}>
-                      <Spacings.Stack scale="xl">
+                <CollapsiblePanel header="Payment methods" isDefaultClosed={false} className="collapsible-panel">
+                    <Constraints.Horizontal max={'scale'}>
+                        <Spacings.Stack scale="xl">
 
-                          <ContentNotification
-                            type="info">{intl.formatMessage(messages.paymentMethodsNotificationInfo)}</ContentNotification><br />
+                            <ContentNotification
+                                type="info">{intl.formatMessage(messages.paymentMethodsNotificationInfo)}</ContentNotification><br />
 
-                          <CollapsiblePanel header="Cards" isDefaultClosed={false} className="collapsible-panel">
-                              <Constraints.Horizontal max={'scale'}>
-                                  <Spacings.Stack scale="xl">
+                            <CollapsiblePanel header="Cards" isDefaultClosed={false} className="collapsible-panel">
+                                <Constraints.Horizontal max={'scale'}>
+                                    <Spacings.Stack scale="xl">
 
-                                      <TextField
-                                        name="payment_methods_cards_title"
-                                        title={intl.formatMessage(messages.paymentMethodsTitle)}
-                                        value={formik.values.payment_methods_cards_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_cards_title}
-                                        touched={formik.touched.payment_methods_cards_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
+                                        <TextField
+                                            name="payment_methods_cards_title"
+                                            title={intl.formatMessage(messages.paymentMethodsTitle)}
+                                            value={formik.values.payment_methods_cards_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_cards_title}
+                                            touched={formik.touched.payment_methods_cards_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
-                                      <TextField
-                                        name="payment_methods_cards_description"
-                                        title={intl.formatMessage(messages.paymentMethodsDescription)}
-                                        value={formik.values.payment_methods_cards_description}
-                                        touched={formik.touched.payment_methods_cards_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
-                                    <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                step="0.01"
-                                                name="payment_methods_card_min_value"
-                                                title="Min value"
-                                                value={formik.values.payment_methods_card_min_value}
-                                                touched={formik.touched.payment_methods_card_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_card_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_card_min_value", minValue.toString());
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_card_max_value"
-                                                title="Max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_card_max_value}
-                                                touched={formik.touched.payment_methods_card_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_card_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_card_max_value", maxValue.toString());
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
-                                  </Spacings.Stack>
-                              </Constraints.Horizontal>
-                          </CollapsiblePanel>
-                          {/*
+                                        <TextField
+                                            name="payment_methods_cards_description"
+                                            title={intl.formatMessage(messages.paymentMethodsDescription)}
+                                            value={formik.values.payment_methods_cards_description}
+                                            touched={formik.touched.payment_methods_cards_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
+                                    </Spacings.Stack>
+                                </Constraints.Horizontal>
+                            </CollapsiblePanel>
+                            {/*
                             <CollapsiblePanel header="Bank accounts" isDefaultClosed={true}
                                               className="collapsible-panel hide">
                                 <Constraints.Horizontal max={'scale'}>
@@ -433,152 +373,53 @@ const WidgetConfigurationForm = () => {
                                 </Constraints.Horizontal>
                             </CollapsiblePanel>
                             */}
-                          <CollapsiblePanel header="Wallets" isDefaultClosed={true} className="collapsible-panel">
-                              <Constraints.Horizontal max={'scale'}>
-                                  <Spacings.Stack scale="xl">
+                            <CollapsiblePanel header="Wallets" isDefaultClosed={true} className="collapsible-panel">
+                                <Constraints.Horizontal max={'scale'}>
+                                    <Spacings.Stack scale="xl">
 
-                                      <TextField
-                                        name="payment_methods_wallets_apple_pay_title"
-                                        title={intl.formatMessage(messages.paymentMethodsApplePayTitle)}
-                                        value={formik.values.payment_methods_wallets_apple_pay_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_apple_pay_title}
-                                        touched={formik.touched.payment_methods_wallets_apple_pay_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
+                                        <TextField
+                                            name="payment_methods_wallets_apple_pay_title"
+                                            title={intl.formatMessage(messages.paymentMethodsApplePayTitle)}
+                                            value={formik.values.payment_methods_wallets_apple_pay_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_apple_pay_title}
+                                            touched={formik.touched.payment_methods_wallets_apple_pay_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
-                                      <TextField
-                                        name="payment_methods_wallets_apple_pay_description"
-                                        title={intl.formatMessage(messages.paymentMethodsApplePayDescription)}
-                                        value={formik.values.payment_methods_wallets_apple_pay_description}
-                                        touched={formik.touched.payment_methods_wallets_apple_pay_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
+                                        <TextField
+                                            name="payment_methods_wallets_apple_pay_description"
+                                            title={intl.formatMessage(messages.paymentMethodsApplePayDescription)}
+                                            value={formik.values.payment_methods_wallets_apple_pay_description}
+                                            touched={formik.touched.payment_methods_wallets_apple_pay_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
 
-                                      <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_apple_pay_min_value"
-                                                title="Apple Pay min value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_apple_pay_min_value}
-                                                touched={formik.touched.payment_methods_wallets_apple_pay_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_apple_pay_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_apple_pay_min_value", minValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_apple_pay_max_value"
-                                                title="Apple Pay max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_apple_pay_max_value}
-                                                touched={formik.touched.payment_methods_wallets_apple_pay_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_apple_pay_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_apple_pay_max_value", maxValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
+                                        <TextField
+                                            name="payment_methods_wallets_google_pay_title"
+                                            title={intl.formatMessage(messages.paymentMethodsGooglePayTitle)}
+                                            value={formik.values.payment_methods_wallets_google_pay_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_google_pay_title}
+                                            touched={formik.touched.payment_methods_wallets_google_pay_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
+                                        <TextField
+                                            name="payment_methods_wallets_google_pay_description"
+                                            title={intl.formatMessage(messages.paymentMethodsGooglePayDescription)}
+                                            value={formik.values.payment_methods_wallets_google_pay_description}
+                                            touched={formik.touched.payment_methods_wallets_google_pay_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
 
-
-
-                                      <TextField
-                                        name="payment_methods_wallets_google_pay_title"
-                                        title={intl.formatMessage(messages.paymentMethodsGooglePayTitle)}
-                                        value={formik.values.payment_methods_wallets_google_pay_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_google_pay_title}
-                                        touched={formik.touched.payment_methods_wallets_google_pay_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
-
-                                      <TextField
-                                        name="payment_methods_wallets_google_pay_description"
-                                        title={intl.formatMessage(messages.paymentMethodsGooglePayDescription)}
-                                        value={formik.values.payment_methods_wallets_google_pay_description}
-                                        touched={formik.touched.payment_methods_wallets_google_pay_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
-                                      <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_google_pay_min_value"
-                                                title="Google Pay min value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_google_pay_min_value}
-                                                touched={formik.touched.payment_methods_wallets_google_pay_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_google_pay_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_google_pay_min_value", minValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_google_pay_max_value"
-                                                title="Google Pay max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_google_pay_max_value}
-                                                touched={formik.touched.payment_methods_wallets_google_pay_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_google_pay_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_google_pay_max_value", maxValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
-                                      {/*
+                                        {/*
                                         <TextField
                                             name="payment_methods_wallets_afterpay_v2_title"
                                             title={intl.formatMessage(messages.paymentMethodsAfterpayV2Title)}
@@ -600,301 +441,253 @@ const WidgetConfigurationForm = () => {
                                             isRequired={false}
                                         />
                                         */}
-                                      <TextField
-                                        name="payment_methods_wallets_paypal_title"
-                                        title={intl.formatMessage(messages.paymentMethodsPaypalTitle)}
-                                        value={formik.values.payment_methods_wallets_paypal_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_paypal_title}
-                                        touched={formik.touched.payment_methods_wallets_paypal_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
+                                        <TextField
+                                            name="payment_methods_wallets_paypal_title"
+                                            title={intl.formatMessage(messages.paymentMethodsPaypalTitle)}
+                                            value={formik.values.payment_methods_wallets_paypal_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_paypal_title}
+                                            touched={formik.touched.payment_methods_wallets_paypal_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
-                                      <TextField
-                                        name="payment_methods_wallets_paypal_description"
-                                        title={intl.formatMessage(messages.paymentMethodsPaypalDescription)}
-                                        value={formik.values.payment_methods_wallets_paypal_description}
-                                        touched={formik.touched.payment_methods_wallets_paypal_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
-                                      <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_paypal_min_value"
-                                                title="PayPal min value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_paypal_min_value}
-                                                touched={formik.touched.payment_methods_wallets_paypal_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_paypal_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_paypal_min_value", minValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_wallets_paypal_max_value"
-                                                title="PayPal max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_wallets_paypal_max_value}
-                                                touched={formik.touched.payment_methods_wallets_paypal_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_wallets_paypal_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_wallets_paypal_max_value", maxValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
-                                  </Spacings.Stack>
-                              </Constraints.Horizontal>
-                          </CollapsiblePanel>
+                                        <TextField
+                                            name="payment_methods_wallets_paypal_description"
+                                            title={intl.formatMessage(messages.paymentMethodsPaypalDescription)}
+                                            value={formik.values.payment_methods_wallets_paypal_description}
+                                            touched={formik.touched.payment_methods_wallets_paypal_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
+                                    </Spacings.Stack>
+                                </Constraints.Horizontal>
+                            </CollapsiblePanel>
 
-                          <CollapsiblePanel header="Alternative Payment Methods" isDefaultClosed={true}
-                                            className="collapsible-panel">
-                              <Constraints.Horizontal max={'scale'}>
-                                  <Spacings.Stack scale="xl">
+                            <CollapsiblePanel header="Alternative Payment Methods" isDefaultClosed={true}
+                                              className="collapsible-panel">
+                                <Constraints.Horizontal max={'scale'}>
+                                    <Spacings.Stack scale="xl">
 
-                                      <TextField
-                                        name="payment_methods_alternative_payment_method_afterpay_v1_title"
-                                        title={intl.formatMessage(messages.paymentMethodsAfterpayV1Title)}
-                                        value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_alternative_payment_method_afterpay_v1_title}
-                                        touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
+                                        <TextField
+                                            name="payment_methods_alternative_payment_method_afterpay_v1_title"
+                                            title={intl.formatMessage(messages.paymentMethodsAfterpayV1Title)}
+                                            value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_alternative_payment_method_afterpay_v1_title}
+                                            touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
-                                      <TextField
-                                        name="payment_methods_alternative_payment_method_afterpay_v1_description"
-                                        title={intl.formatMessage(messages.paymentMethodsAfterpayV1Description)}
-                                        value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_description}
-                                        touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
+                                        <TextField
+                                            name="payment_methods_alternative_payment_method_afterpay_v1_description"
+                                            title={intl.formatMessage(messages.paymentMethodsAfterpayV1Description)}
+                                            value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_description}
+                                            touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
 
-                                      <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_alternative_payment_method_afterpay_v1_min_value"
-                                                title="Afterpay V1 min value"
-                                                value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_min_value}
-                                                touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_min_value", minValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_alternative_payment_method_afterpay_v1_max_value"
-                                                title="Afterpay V1 max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_max_value}
-                                                touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_max_value", maxValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
-                                      <TextField
-                                        name="payment_methods_alternative_payment_method_zip_title"
-                                        title={intl.formatMessage(messages.paymentMethodsZipTitle)}
-                                        value={formik.values.payment_methods_alternative_payment_method_zip_title}
-                                        errors={TextField.toFieldErrors(formik.errors).payment_methods_alternative_payment_method_zip_title}
-                                        touched={formik.touched.payment_methods_alternative_payment_method_zip_title}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={true}
-                                      />
+                                        <Grid
+                                            gridGap="16px"
+                                            gridAutoColumns="1fr"
+                                            gridTemplateColumns="repeat(2, 1fr)"
+                                        >
+                                            <Grid.Item>
+                                                <TextField
+                                                    type="number"
+                                                    name="payment_methods_alternative_payment_method_afterpay_v1_min_value"
+                                                    title="Afterpay V1 min value"
+                                                    value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_min_value}
+                                                    touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_min_value}
+                                                    onChange={(e) => {
+                                                        const minValue = e.target.value;
+                                                        if (!minValue) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_min_value", '');
+                                                        }
+                                                        if (Number(minValue) >= 0) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_min_value", minValue);
+                                                        }
+                                                    }}
+                                                    onBlur={formik.handleBlur}
+                                                    isRequired={false}
+                                                />
+                                            </Grid.Item>
+                                            <Grid.Item>
+                                                <TextField
+                                                    type="number"
+                                                    name="payment_methods_alternative_payment_method_afterpay_v1_max_value"
+                                                    title="Afterpay V1 max value"
+                                                    step="0.01"
+                                                    value={formik.values.payment_methods_alternative_payment_method_afterpay_v1_max_value}
+                                                    touched={formik.touched.payment_methods_alternative_payment_method_afterpay_v1_max_value}
+                                                    onChange={(e) => {
+                                                        const maxValue = e.target.value;
+                                                        if (!maxValue) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_max_value", '');
+                                                        }
+                                                        if (Number(maxValue) >= 0) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_afterpay_v1_max_value", maxValue);
+                                                        }
+                                                    }}
+                                                    onBlur={formik.handleBlur}
+                                                    isRequired={false}
+                                                />
+                                            </Grid.Item>
+                                        </Grid>
+                                        <TextField
+                                            name="payment_methods_alternative_payment_method_zip_title"
+                                            title={intl.formatMessage(messages.paymentMethodsZipTitle)}
+                                            value={formik.values.payment_methods_alternative_payment_method_zip_title}
+                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_alternative_payment_method_zip_title}
+                                            touched={formik.touched.payment_methods_alternative_payment_method_zip_title}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={true}
+                                        />
 
-                                      <TextField
-                                        name="payment_methods_alternative_payment_method_zip_description"
-                                        title={intl.formatMessage(messages.paymentMethodsZipDescription)}
-                                        value={formik.values.payment_methods_alternative_payment_method_zip_description}
-                                        touched={formik.touched.payment_methods_alternative_payment_method_zip_description}
-                                        onChange={formik.handleChange}
-                                        onBlur={formik.handleBlur}
-                                        isRequired={false}
-                                      />
-                                      <Grid
-                                        gridGap="16px"
-                                        gridAutoColumns="1fr"
-                                        gridTemplateColumns="repeat(2, 1fr)"
-                                      >
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_alternative_payment_method_zippay_min_value"
-                                                title="ZIP min value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_alternative_payment_method_zippay_min_value}
-                                                touched={formik.touched.payment_methods_alternative_payment_method_zippay_min_value}
-                                                onChange={(e) => {
-                                                    const minValue = e.target.value;
-                                                    if (!minValue) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_zippay_min_value", '');
-                                                    }
-                                                    if (Number(minValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_zippay_min_value", minValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                          <Grid.Item>
-                                              <TextField
-                                                type="number"
-                                                name="payment_methods_alternative_payment_method_zippay_max_value"
-                                                title="ZIP max value"
-                                                step="0.01"
-                                                value={formik.values.payment_methods_alternative_payment_method_zippay_max_value}
-                                                touched={formik.touched.payment_methods_alternative_payment_method_zippay_max_value}
-                                                onChange={(e) => {
-                                                    const maxValue = e.target.value;
-                                                    if (!maxValue) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_zippay_max_value", '');
-                                                    }
-                                                    if (Number(maxValue) >= 0) {
-                                                        formik.setFieldValue("payment_methods_alternative_payment_method_zippay_max_value", maxValue);
-                                                    }
-                                                }}
-                                                onBlur={formik.handleBlur}
-                                                isRequired={false}
-                                              />
-                                          </Grid.Item>
-                                      </Grid>
-                                  </Spacings.Stack>
-                              </Constraints.Horizontal>
-                          </CollapsiblePanel>
+                                        <TextField
+                                            name="payment_methods_alternative_payment_method_zip_description"
+                                            title={intl.formatMessage(messages.paymentMethodsZipDescription)}
+                                            value={formik.values.payment_methods_alternative_payment_method_zip_description}
+                                            touched={formik.touched.payment_methods_alternative_payment_method_zip_description}
+                                            onChange={formik.handleChange}
+                                            onBlur={formik.handleBlur}
+                                            isRequired={false}
+                                        />
+                                        <Grid
+                                            gridGap="16px"
+                                            gridAutoColumns="1fr"
+                                            gridTemplateColumns="repeat(2, 1fr)"
+                                        >
+                                            <Grid.Item>
+                                                <TextField
+                                                    type="number"
+                                                    name="payment_methods_alternative_payment_method_zippay_min_value"
+                                                    title="ZIP min value"
+                                                    step="0.01"
+                                                    value={formik.values.payment_methods_alternative_payment_method_zippay_min_value}
+                                                    touched={formik.touched.payment_methods_alternative_payment_method_zippay_min_value}
+                                                    onChange={(e) => {
+                                                        const minValue = e.target.value;
+                                                        if (!minValue) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_zippay_min_value", '');
+                                                        }
+                                                        if (Number(minValue) >= 0) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_zippay_min_value", minValue);
+                                                        }
+                                                    }}
+                                                    onBlur={formik.handleBlur}
+                                                    isRequired={false}
+                                                />
+                                            </Grid.Item>
+                                            <Grid.Item>
+                                                <TextField
+                                                    type="number"
+                                                    name="payment_methods_alternative_payment_method_zippay_max_value"
+                                                    title="ZIP max value"
+                                                    step="0.01"
+                                                    value={formik.values.payment_methods_alternative_payment_method_zippay_max_value}
+                                                    touched={formik.touched.payment_methods_alternative_payment_method_zippay_max_value}
+                                                    onChange={(e) => {
+                                                        const maxValue = e.target.value;
+                                                        if (!maxValue) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_zippay_max_value", '');
+                                                        }
+                                                        if (Number(maxValue) >= 0) {
+                                                            formik.setFieldValue("payment_methods_alternative_payment_method_zippay_max_value", maxValue);
+                                                        }
+                                                    }}
+                                                    onBlur={formik.handleBlur}
+                                                    isRequired={false}
+                                                />
+                                            </Grid.Item>
+                                        </Grid>
+                                    </Spacings.Stack>
+                                </Constraints.Horizontal>
+                            </CollapsiblePanel>
 
-                      </Spacings.Stack>
-                  </Constraints.Horizontal>
-              </CollapsiblePanel>
+                        </Spacings.Stack>
+                    </Constraints.Horizontal>
+                </CollapsiblePanel>
 
 
-              <CollapsiblePanel header="Widget style" isDefaultClosed={false} className="collapsible-panel">
-                  <Constraints.Horizontal max={'scale'}>
-                      <Spacings.Stack scale="xl">
+                <CollapsiblePanel header="Widget style" isDefaultClosed={false} className="collapsible-panel">
+                    <Constraints.Horizontal max={'scale'}>
+                        <Spacings.Stack scale="xl">
 
-                          <ContentNotification
-                            type="info">{intl.formatMessage(messages.widgetStyleNotificationInfo)}</ContentNotification>
+                            <ContentNotification
+                                type="info">{intl.formatMessage(messages.widgetStyleNotificationInfo)}</ContentNotification>
 
-                          <ColorPicker color={formik.values.widget_style_bg_color} name="widget_style_bg_color"
-                                       formik={formik}
-                                       title={intl.formatMessage(messages.backgroundColor)} />
+                            <ColorPicker color={formik.values.widget_style_bg_color} name="widget_style_bg_color"
+                                         formik={formik}
+                                         title={intl.formatMessage(messages.backgroundColor)} />
 
-                          <ColorPicker color={formik.values.widget_style_text_color} name="widget_style_text_color"
-                                       formik={formik}
-                                       title={intl.formatMessage(messages.textColor)} />
+                            <ColorPicker color={formik.values.widget_style_text_color} name="widget_style_text_color"
+                                         formik={formik}
+                                         title={intl.formatMessage(messages.textColor)} />
 
-                          <ColorPicker color={formik.values.widget_style_border_color}
-                                       name="widget_style_border_color"
-                                       formik={formik}
-                                       title={intl.formatMessage(messages.borderColor)} />
+                            <ColorPicker color={formik.values.widget_style_border_color}
+                                         name="widget_style_border_color"
+                                         formik={formik}
+                                         title={intl.formatMessage(messages.borderColor)} />
 
-                          <ColorPicker color={formik.values.widget_style_error_color} name="widget_style_error_color"
-                                       formik={formik}
-                                       title={intl.formatMessage(messages.errorColor)} />
+                            <ColorPicker color={formik.values.widget_style_error_color} name="widget_style_error_color"
+                                         formik={formik}
+                                         title={intl.formatMessage(messages.errorColor)} />
 
-                          <ColorPicker color={formik.values.widget_style_success_color}
-                                       name="widget_style_success_color"
-                                       formik={formik}
-                                       title={intl.formatMessage(messages.successColor)} />
+                            <ColorPicker color={formik.values.widget_style_success_color}
+                                         name="widget_style_success_color"
+                                         formik={formik}
+                                         title={intl.formatMessage(messages.successColor)} />
 
-                          <SelectField
-                            name="widget_style_font_size"
-                            title={intl.formatMessage(messages.widgetStyleFontSizeTitle)}
-                            isMulti={false}
-                            value={formik.values.widget_style_font_size}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            options={widget_style_font_size_options}
-                            isSearchable={false}
-                            isClearable={false}
-                            isRequired={false}
-                          />
+                            <SelectField
+                                name="widget_style_font_size"
+                                title={intl.formatMessage(messages.widgetStyleFontSizeTitle)}
+                                isMulti={false}
+                                value={formik.values.widget_style_font_size}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                options={widget_style_font_size_options}
+                                isSearchable={false}
+                                isClearable={false}
+                                isRequired={false}
+                            />
 
-                          <SelectField
-                            name="widget_style_font_family"
-                            title={intl.formatMessage(messages.widgetStyleFontFamilyTitle)}
-                            isMulti={false}
-                            value={formik.values.widget_style_font_family}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            options={widget_style_font_family_options}
-                            isSearchable={false}
-                            isClearable={false}
-                            isRequired={false}
-                          />
+                            <SelectField
+                                name="widget_style_font_family"
+                                title={intl.formatMessage(messages.widgetStyleFontFamilyTitle)}
+                                isMulti={false}
+                                value={formik.values.widget_style_font_family}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                options={widget_style_font_family_options}
+                                isSearchable={false}
+                                isClearable={false}
+                                isRequired={false}
+                            />
 
-                          <MultilineTextField
-                            name="widget_style_custom_element"
-                            title={intl.formatMessage(messages.widgetStyleCustomElementTitle)}
-                            value={formik.values.widget_style_custom_element}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            isDisabled={formik.isSubmitting}
-                            isRequired={false}
-                            defaultExpandMultilineText={false}
-                            placeholder={JSON.stringify(customElementStyles, null, 2)}
-                          />
+                            <MultilineTextField
+                                name="widget_style_custom_element"
+                                title={intl.formatMessage(messages.widgetStyleCustomElementTitle)}
+                                value={formik.values.widget_style_custom_element}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                isDisabled={formik.isSubmitting}
+                                isRequired={false}
+                                defaultExpandMultilineText={false}
+                                placeholder={JSON.stringify(customElementStyles, null, 2)}
+                            />
 
-                      </Spacings.Stack>
-                  </Constraints.Horizontal>
-              </CollapsiblePanel>
+                        </Spacings.Stack>
+                    </Constraints.Horizontal>
+                </CollapsiblePanel>
 
-          </form>
-      </>
+            </form>
+        </>
     );
 };
 

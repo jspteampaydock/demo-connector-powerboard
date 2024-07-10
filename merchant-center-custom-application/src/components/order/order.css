@@ -74,6 +74,10 @@
     color: #fa0000;
 }
 
+.table-orders .amount .captured-amount {
+    color: #1D635D;
+}
+
 .table-orders .powerboard-authorize span,
 .table-orders .powerboard-p-refund span,
 .table-orders .powerboard-pending span,
@@ -84,6 +88,7 @@
 .table-orders .powerboard-received span,
 .table-orders .powerboard-refunded span,
 .table-orders .powerboard-cancelled span,
+.table-orders .powerboard-p-paid span,
 .table-orders .powerboard-paid span {
     background-color: #CEF6F3;
     color: #1D635D;

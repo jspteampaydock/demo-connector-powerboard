@@ -1,7 +1,7 @@
 // Make sure to import the helper functions from the `ssr` entry point.
 import { entryPointUriPathToPermissionKeys } from '@commercetools-frontend/application-shell/ssr';
 
-export const entryPointUriPath = 'powerboard-app';
+export const entryPointUriPath = typeof window === 'undefined' ? process.env.ENTRY_POINT_URI_PATH : window.app.entryPointUriPath;
 
 export const PERMISSIONS = entryPointUriPathToPermissionKeys(entryPointUriPath);
 
@@ -100,6 +100,7 @@ export const CHARGE_STATUSES =  {
   'powerboard-requested': 'Requested via PowerBoard',
   'powerboard-failed': 'Failed via PowerBoard',
   'powerboard-received': 'Received via PowerBoard',
+  'powerboard-p-paid': 'Partial paid via PowerBoard',
 }
 export const API_LIVE_URL = 'https://api.powerboard.commbank.com.au';
 export const API_SANDBOX_URL = 'https://api.preproduction.powerboard.commbank.com.au';

@@ -13,6 +13,8 @@ import NumberField from '@commercetools-uikit/number-field';
 import PulseLoader from 'react-spinners/PulseLoader';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
+import RefundIcon from './RefundIcon';
+import CapturedIcon from './CapturedIcon';
 
 const OrdersHistory = () => {
     const [error, setError] = useState(null);
@@ -23,7 +25,12 @@ const OrdersHistory = () => {
     const [typedAmountRefund, setTypedAmountRefund] = useState({});
     const [updateAmountRefund, setUpdateAmountRefund] = useState({});
     const [changeStatus, setChangeStatus] = useState({});
-    const [changeStatusName, setChangeStatuName] = useState({});
+    const [changeStatusName, setChangeStatusName] = useState({});
+    const [typedAmountCaptured, setTypedAmountCaptured] = useState({});
+    const [isVisibleInputCapturedAmount, setVisibleInputCapturedAmount] = useState({});
+    const [updateAmountCaptured, setUpdateAmountCaptured] = useState({});
+    const [captured, setCaptured] = useState(null);
+
     const [changeDate, setChangeDate] = useState({});
     const [isVisibleInputRefaund, setIsVisibleInputRefaund] = useState({});
     const [isVisibleRefundButtons, setIsVisibleRefundButtons] = useState({});
@@ -44,14 +51,22 @@ const OrdersHistory = () => {
     );
     const apiAdapter = new CommerceToolsAPIAdapter(env);
 
-    const requestUpdateOrder = async (id, status, refund_amount = null, updated_at) => {
+    const requestUpdateOrder = async (id, status, operation_amount  = null, updated_at) => {
+
 
         const requestData = {
             orderId: id,
             newStatus: status,
             newDate: updated_at,
         };
-        if (refund_amount !== null) requestData.refundAmount = refund_amount;
+        if (operation_amount !== null) {
+            if (status === 'powerboard-paid' || status === 'powerboard-p-paid') {
+                requestData.capturedAmount = operation_amount;
+            } else {
+                requestData.refundAmount = operation_amount;
+            }
+        }
+
         let result = await apiAdapter.updateOrderStatus(requestData);
         if (result.success) {
             setStatusUpdated(true);
@@ -69,7 +84,6 @@ const OrdersHistory = () => {
                 [id]: false,
             }));
         }
-
     };
 
     useEffect(() => {
@@ -78,7 +92,7 @@ const OrdersHistory = () => {
                 ...prevState,
                 [orderId]: status,
             }));
-            setChangeStatuName(prevState => ({
+            setChangeStatusName(prevState => ({
                 ...prevState,
                 [orderId]: statusName,
             }));
@@ -90,12 +104,36 @@ const OrdersHistory = () => {
                 ...prevState,
                 [orderId]: dateUpdated,
             }));
-            if (type === 'capture' || type === 'cancel-authorize') {
+
+            if (type === 'cancel-authorize') {
                 setIsVisibleAuthorizedButtons(prevState => ({
                     ...prevState,
                     [orderId]: false,
                 }));
             }
+
+            if (type === 'submit-captured') {
+                setUpdateAmountCaptured(prevState => ({
+                    ...prevState,
+                    [orderId]: captured,
+                }));
+
+                setIsVisibleAuthorizedButtons(prevState => ({
+                    ...prevState,
+                    [orderId]: false,
+                }));
+
+                setVisibleInputCapturedAmount(prevState => ({
+                    ...prevState,
+                    [orderId]: false,
+                }));
+
+                setIsVisibleRefundButtons(prevState => ({
+                    ...prevState,
+                    [orderId]: true,
+                }));
+            }
+
             if (type === 'capture') {
                 setIsVisibleRefundButtons(prevState => ({
                     ...prevState,
@@ -149,7 +187,18 @@ const OrdersHistory = () => {
                 ...prevState,
                 [id]: false,
             }));
+        } else if (type == 'captured-btn') {
+            setVisibleInputCapturedAmount(prevState => ({
+                ...prevState,
+                [id]: true,
+            }));
+        } else if (type == 'cancel-partial-captured') {
+            setVisibleInputCapturedAmount(prevState => ({
+                ...prevState,
+                [id]: false,
+            }));
         }
+
 
         if (rowSuccess) {
             setRowSuccess(prevState => ({
@@ -165,7 +214,7 @@ const OrdersHistory = () => {
         }
 
         let newDates = moment().format('YYYY-MM-DD HH:mm:ss');
-        if (type === 'capture' || type === 'cancel-authorize') {
+        if (type === 'cancel-authorize') {
             const newStatus = type === 'capture' ? 'powerboard-paid' : 'powerboard-cancelled';
             const newStatusName = type === 'capture' ? 'Paid via PowerBoard' : 'Cancelled via PowerBoard';
             const ctStatusName = type === 'capture' ? 'Paid' : 'Failed';
@@ -183,6 +232,33 @@ const OrdersHistory = () => {
             setDateUpdated(newDates);
 
             requestUpdateOrder(id, newStatus, null, newDates);
+        }
+        if (type === 'submit-captured') {
+            let capturedAmount;
+            if(typeof typedAmountCaptured[id] === 'undefined'){
+                capturedAmount = amount;
+            }else{
+                capturedAmount = parseFloat(Number(typedAmountCaptured[id]).toFixed(2));
+            }
+            if (capturedAmount <= 0 || capturedAmount > amount) return;
+
+            setLoading(prevState => ({
+                ...prevState,
+                [id]: true,
+            }));
+
+            const newStatus = capturedAmount === amount ? 'powerboard-paid' : 'powerboard-p-paid';
+            const newStatusName = newStatus === 'powerboard-paid' ? 'Paid via PowerBoard' : 'Partial paid via PowerBoard';
+            const ctStatusName = 'Paid'
+
+            setType(type);
+            setStatus(newStatus);
+            setCaptured(capturedAmount);
+            setCTStatusName(ctStatusName)
+            setStatusName(newStatusName)
+            setOrderId(id);
+            setDateUpdated(newDates);
+            requestUpdateOrder(id, newStatus, capturedAmount, newDates);
         }
 
         if (type === 'cancel') {
@@ -254,6 +330,11 @@ const OrdersHistory = () => {
     const handleTypedAmountRefund = (e, id) => {
         const value = e.target.value;
         setTypedAmountRefund({ ...typedAmountRefund, [id]: value });
+    };
+
+    const handleTypedAmountCaptured = (e, id) => {
+        const value = e.target.value;
+        setTypedAmountCaptured ({ ...typedAmountCaptured , [id]: value });
     };
 
     const columns = [
@@ -366,31 +447,52 @@ const OrdersHistory = () => {
                         </td>
                         <td className="amount">
                             <span className="mobile-label">{columns[4].label}:</span>
-                            <span>{changeStatus[d.order_number] === 'powerboard-p-refund' || changeStatus[d.order_number] === 'powerboard-refunded'
-                              ? <>
-                                  <span className="refund-base-amount">{d.amount}</span>
-                                  {d.amount - updateAmountRefund[d.order_number]}<br />
-                                  <span className="refund">
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            height="10" width="10"
-                                            viewBox="0 0 512 512"><path
-                                            fill="#ff0000"
-                                            d="M205 34.8c11.5 5.1 19 16.6 19 29.2v64H336c97.2 0 176 78.8 176 176c0 113.3-81.5 163.9-100.2 174.1c-2.5 1.4-5.3 1.9-8.1 1.9c-10.9 0-19.7-8.9-19.7-19.7c0-7.5 4.3-14.4 9.8-19.5c9.4-8.8 22.2-26.4 22.2-56.7c0-53-43-96-96-96H224v64c0 12.6-7.4 24.1-19 29.2s-25 3-34.4-5.4l-160-144C3.9 225.7 0 217.1 0 208s3.9-17.7 10.6-23.8l160-144c9.4-8.5 22.9-10.6 34.4-5.4z" /></svg>
-                                      &nbsp;{updateAmountRefund[d.order_number]}</span>
-                              </>
-                              : d.status === 'powerboard-p-refund' || d.status === 'powerboard-refunded'
-                                ? <>
-                                    <span className="refund-base-amount">{d.amount}</span>
-                                    {d.amount - d.refund_amount}<br />
-                                    <span className="refund">
-                                            <svg xmlns="http://www.w3.org/2000/svg" height="10" width="10"
-                                                 viewBox="0 0 512 512"><path fill="#ff0000"
-                                                                             d="M205 34.8c11.5 5.1 19 16.6 19 29.2v64H336c97.2 0 176 78.8 176 176c0 113.3-81.5 163.9-100.2 174.1c-2.5 1.4-5.3 1.9-8.1 1.9c-10.9 0-19.7-8.9-19.7-19.7c0-7.5 4.3-14.4 9.8-19.5c9.4-8.8 22.2-26.4 22.2-56.7c0-53-43-96-96-96H224v64c0 12.6-7.4 24.1-19 29.2s-25 3-34.4-5.4l-160-144C3.9 225.7 0 217.1 0 208s3.9-17.7 10.6-23.8l160-144c9.4-8.5 22.9-10.6 34.4-5.4z" /></svg>
-                                        &nbsp;{d.refund_amount}</span>
-                                </>
-                                : d.amount}
-                                </span>
+                            <span>
+                                {changeStatus[d.order_number] === 'powerboard-p-refund' || changeStatus[d.order_number] === 'powerboard-refunded' || changeStatus[d.order_number] === 'powerboard-p-paid' ? (
+                                    changeStatus[d.order_number] === 'powerboard-p-paid' ? (
+                                        <>
+                                            <span className="refund-base-amount">{d.amount}</span>
+                                            {d.amount - updateAmountCaptured[d.order_number]}<br/>
+                                            <span className="captured-amount">
+                                                <CapturedIcon/>
+                                                &nbsp;{updateAmountCaptured[d.order_number]}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="refund-base-amount">{d.amount}</span>
+                                            {d.amount - updateAmountRefund[d.order_number]}<br/>
+                                            <span className="refund">
+                                                <RefundIcon/>
+                                                &nbsp;{updateAmountRefund[d.order_number]}
+                                            </span>
+                                        </>
+                                    )
+                                ) : (
+                                    d.status === 'powerboard-p-refund' || d.status === 'powerboard-refunded' || d.status === 'powerboard-p-paid' ? (
+                                        d.status === 'powerboard-p-paid' ? (
+                                            <>
+                                                <span className="refund-base-amount">{d.amount}</span>
+                                                {Math.round((d.amount - d.captured_amount) * 100) / 100}<br/>
+                                                <span className="captured-amount">
+                                                        <CapturedIcon/>
+                                                    &nbsp;{d.captured_amount}
+                                                    </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="refund-base-amount">{d.amount}</span>
+                                                {Math.round((d.captured_amount - d.refund_amount) * 100) / 100}<br/>
+                                                <span className="refund">
+                                                <RefundIcon/>
+                                                    &nbsp;{d.captured_amount}
+                                            </span>
+                                            </>
+                                        )) : (
+                                        <>{d.amount}</>
+                                    )
+                                )}
+                            </span>
                         </td>
                         <td className="currency">
                             <span className="mobile-label">{columns[5].label}:</span>
@@ -420,76 +522,106 @@ const OrdersHistory = () => {
                         </td>
                         <td className="action">
                             <div className="action-wrapper">
-                                <span className="mobile-label">{columns[10].label}:</span>
-                                {loading[d.order_number] ? <PulseLoader color={'#36d7b7'} loading={loading} size={10} /> : (
-                                  <>
-                                      {d.status === 'powerboard-authorize' && isVisibleAuthorizedButtons[d.order_number] !== false && (
+                                <span className="mobile-label">{columns[11].label}:</span>
+                                {loading[d.order_number] ?
+                                    <PulseLoader color={'#36d7b7'} loading={loading} size={11}/> : (
                                         <>
-                                            <PrimaryButton
-                                              label="Capture Charge"
-                                              onClick={() => handleOrderAction('capture', d.order_number)}
-                                            />
-                                            <SecondaryButton
-                                              label="Cancel Charge"
-                                              onClick={() => handleOrderAction('cancel-authorize', d.order_number)}
-                                            />
-                                        </>
-                                      )}
-                                      {(['powerboard-paid', 'powerboard-p-refund', 'powerboard-requested'].includes(d.status) || isVisibleRefundButtons[d.order_number]) && isVisibleRefundButtons[d.order_number] !== false && (
-                                        <>
-                                            {isVisibleInputRefaund[d.order_number] ? (
-                                              <>
-                                                  <NumberField
-                                                    title="amount"
-                                                    value={typedAmountRefund[d.order_number] || ''}
-                                                    onChange={(e) => handleTypedAmountRefund(e, d.order_number)}
-                                                    name="amount-refund"
-                                                    isRequired={true}
-                                                  />
-                                                  <PrimaryButton
-                                                    label="Refund"
-                                                    onClick={() => handleOrderAction('submit-refund', d.order_number, d.amount, d.refund_amount)}
-                                                    isDisabled={
-                                                        (typedAmountRefund[d.order_number] <= 0 || 
-                                                        typedAmountRefund[d.order_number] > d.amount ||
-                                                        (typedAmountRefund[d.order_number] > (updateAmountRefund[d.order_number] !== undefined ? d.amount - updateAmountRefund[d.order_number] : d.amount - d.refund_amount) )) ? true : false
-                                                    }
-                                                  />
-                                                  <SecondaryButton
-                                                    label="Cancel Charge"
-                                                    onClick={() => handleOrderAction('cancel-refund', d.order_number)}
-                                                  />
-                                              </>
-                                            ) : (
-                                              <>
-                                                  <SecondaryButton
-                                                    label="Refund"
-                                                    onClick={() => handleOrderAction('refund-btn', d.order_number)}
-                                                  />
+                                            {d.status === 'powerboard-authorize' && isVisibleAuthorizedButtons[d.order_number] !== false && (
 
-                                                  {d.status !== 'powerboard-refunded' && (
-                                                    <PrimaryButton
-                                                      label="Cancel Charge"
-                                                      onClick={() => handleOrderAction('cancel', d.order_number)}
-                                                    />
-                                                  )}
-                                              </>
+                                                <>
+                                                    {isVisibleInputCapturedAmount[d.order_number] ? (
+                                                        <>
+                                                            <NumberField
+                                                                title="amount"
+                                                                value={typedAmountCaptured[d.order_number] || d.possible_amount_captured.toFixed(2)}
+                                                                onChange={(e) => handleTypedAmountCaptured(e, d.order_number)}
+                                                                name="amount-captured"
+                                                                inputMode="decimal"
+                                                                isRequired={true}
+                                                            />
+                                                            <PrimaryButton
+                                                                label="Capture"
+                                                                onClick={() => handleOrderAction('submit-captured', d.order_number, d.amount, d.captured_amount)}
+                                                                isDisabled={
+                                                                    (typedAmountCaptured[d.order_number] <= 0 ||
+                                                                        typedAmountCaptured[d.order_number] > d.possible_amount_captured) ? true : false
+                                                                }
+                                                            />
+                                                            <SecondaryButton
+                                                                label="Cancel"
+                                                                onClick={() => handleOrderAction('cancel-partial-captured', d.order_number, d.possible_amount_captured)}
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <PrimaryButton
+                                                                label="Capture Charge"
+                                                                onClick={() => handleOrderAction('captured-btn', d.order_number)}
+                                                            />
+                                                            <SecondaryButton
+                                                                label="Cancel Charge"
+                                                                onClick={() => handleOrderAction('cancel-authorize', d.order_number)}
+                                                            />
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+
+                                            {(['powerboard-paid', 'powerboard-p-paid', 'powerboard-p-refund', 'powerboard-requested'].includes(d.status) || isVisibleRefundButtons[d.order_number]) && isVisibleRefundButtons[d.order_number] !== false && (
+                                                <>
+                                                    {isVisibleInputRefaund[d.order_number] ? (
+                                                        <>
+                                                            <NumberField
+                                                                title="amount"
+                                                                value={typedAmountRefund[d.order_number] || ''}
+                                                                onChange={(e) => handleTypedAmountRefund(e, d.order_number)}
+                                                                name="amount-refund"
+                                                                isRequired={true}
+                                                            />
+                                                            <PrimaryButton
+                                                                label="Refund"
+                                                                onClick={() => handleOrderAction('submit-refund', d.order_number, d.captured_amount, d.refund_amount)}
+                                                                isDisabled={
+                                                                    (typedAmountRefund[d.order_number] <= 0 ||
+                                                                        typedAmountRefund[d.order_number] > d.captured_amount ||
+                                                                        (typedAmountRefund[d.order_number] > (updateAmountRefund[d.order_number] !== undefined ? d.captured_amount - updateAmountRefund[d.order_number] : d.captured_amount - d.refund_amount))) ? true : false
+                                                                }
+                                                            />
+                                                            <SecondaryButton
+                                                                label="Cancel Charge"
+                                                                onClick={() => handleOrderAction('cancel-refund', d.order_number)}
+                                                            />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <SecondaryButton
+                                                                label="Refund"
+                                                                onClick={() => handleOrderAction('refund-btn', d.order_number)}
+                                                            />
+
+                                                            {d.status !== 'powerboard-refunded' && (
+                                                                <PrimaryButton
+                                                                    label="Cancel Charge"
+                                                                    onClick={() => handleOrderAction('cancel', d.order_number)}
+                                                                />
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </>
                                             )}
                                         </>
-                                      )}
-                                  </>
-                                )}
+                                    )}
                             </div>
                             {rowErrors[d.order_number] && (
-                              <div className="error-notification">
-                                  <ContentNotification
-                                    type="error">{rowErrors[d.order_number].message}</ContentNotification>
-                              </div>
+                                <div className="error-notification">
+                                    <ContentNotification
+                                        type="error">{rowErrors[d.order_number].message}</ContentNotification>
+                                </div>
                             )}
                             {rowSuccess[d.order_number] && (
-                              <div className="success-notification">
-                                  <ContentNotification type="success">Updated successfully!</ContentNotification>
-                              </div>
+                                <div className="success-notification">
+                                    <ContentNotification type="success">Updated successfully!</ContentNotification>
+                                </div>
                             )}
                         </td>
                     </tr>
