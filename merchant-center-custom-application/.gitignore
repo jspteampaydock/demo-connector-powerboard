@@ -1,0 +1,8 @@
+node_modules
+public
+dist
+!sample.env
+.env.local
+.vercel
+start.sh
+.idea
