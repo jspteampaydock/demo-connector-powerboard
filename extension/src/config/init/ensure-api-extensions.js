@@ -45,6 +45,16 @@ async function ensureApiExtensions(
 
     if (existingExtensionOrder === null) {
       await ctpClient.create(ctpClient.builder.extensions, extensionOrderDraft)
+    }else{
+      const actionsExtensionOrder = buildUpdateActions(existingExtensionOrder, extensionOrderDraft)
+      if (actionsExtensionOrder.length > 0) {
+        await ctpClient.update(
+            ctpClient.builder.extensions,
+            existingExtensionOrder.id,
+            existingExtensionOrder.version,
+            actionsExtensionOrder,
+        )
+      }
     }
 
     if (existingExtension === null) {
