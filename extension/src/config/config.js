@@ -41,6 +41,13 @@ function getExtensionConfig() {
     }
 }
 
+function getWidgetConfig() {
+    return {
+        widget_url: config.powerboardWidgetUrl ?? null,
+        widget_test_url: config.powerboardWidgetTestUrl ?? null,
+        type_sdk: config.powerboardWidgetTypeSdk ?? null
+    }
+}
 
 async function getPowerboardConfig(type = 'all', disableCache = false) {
     if (!powerboardConfig || disableCache) {
@@ -97,6 +104,7 @@ export default {
     getModuleConfig,
     getPowerboardConfig,
     getCtpClient,
+    getWidgetConfig,
     getExtensionConfig,
     getPowerboardApiUrl
 }

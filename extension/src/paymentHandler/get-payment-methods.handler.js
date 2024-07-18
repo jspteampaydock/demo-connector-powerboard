@@ -20,7 +20,7 @@ async function execute(paymentObject) {
         totalPrice = centAmount / fraction;
     }
 
-    if(paymentExtensionRequest.request){
+    if (paymentExtensionRequest.request) {
         CommerceToolsUserId = paymentExtensionRequest.request.CommerceToolsUserId
     }
     const powerboardCredentials = await config.getPowerboardConfig('all', true);
@@ -44,7 +44,6 @@ async function execute(paymentObject) {
             }
         }
     }
-
     const responseData = {
         sandbox_mode: powerboardCredentials.sandbox.sandbox_mode,
         api_credentials: {
@@ -165,6 +164,7 @@ async function execute(paymentObject) {
             }
         },
         widget_configuration: {
+            config: config.getWidgetConfig(),
             version: {
                 version_version: powerboardCredentials.widget.version_version,
                 version_custom_version: powerboardCredentials.widget.version_custom_version
@@ -176,7 +176,7 @@ async function execute(paymentObject) {
                 },
                 bank_accounts: {
                     payment_methods_bank_accounts_title: powerboardCredentials.widget.payment_methods_bank_accounts_title,
-                    payment_methods_bank_accounts_description:  powerboardCredentials.widget.payment_methods_bank_accounts_description,
+                    payment_methods_bank_accounts_description: powerboardCredentials.widget.payment_methods_bank_accounts_description,
                 },
                 wallets: {
                     payment_methods_wallets_apple_pay_title: powerboardCredentials.widget.payment_methods_wallets_apple_pay_title,
@@ -195,7 +195,7 @@ async function execute(paymentObject) {
                     payment_methods_alternative_payment_method_zip_description: powerboardCredentials.widget.payment_methods_alternative_payment_method_zip_description
                 }
             },
-            widget_style:{
+            widget_style: {
                 widget_style_bg_color: powerboardCredentials.widget.widget_style_bg_color,
                 widget_style_text_color: powerboardCredentials.widget.widget_style_text_color,
                 widget_style_border_color: powerboardCredentials.widget.widget_style_border_color,

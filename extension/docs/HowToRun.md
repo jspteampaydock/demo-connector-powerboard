@@ -44,7 +44,10 @@ echo 'POWERBOARD_INTEGRATION_CONFIG={
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
    "powerboardLiveUrl": "[API_POWERBOARD_URL]",
    "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]",
+   "powerboardWidgetTypeSdk": "[WIDGET_TYPE_SDK]",//("staging_cba", "sandbox_cba")
+   "powerboardWidgetUrl": "[WIDGET_URL]",
+   "powerboardWidgetTestUrl": "[WIDGET_TEST_URL]"
 }' > ./extension/.env
 ```
 
@@ -99,7 +102,10 @@ echo 'POWERBOARD_INTEGRATION_CONFIG={
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
    "powerboardLiveUrl": "[API_POWERBOARD_URL]",
    "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]",
+   "powerboardWidgetTypeSdk": "[WIDGET_TYPE_SDK]",//("staging_cba", "sandbox_cba")
+   "powerboardWidgetUrl": "[WIDGET_URL]",
+   "powerboardWidgetTestUrl": "[WIDGET_TEST_URL]"
 }' > ./extension/.env
 ```
 
