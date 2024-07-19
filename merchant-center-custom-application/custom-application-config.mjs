@@ -16,7 +16,8 @@ const config = {
         clientId: '${env:APP_CLIENT_ID}',
         clientSecret: '${env:APP_CLIENT_SECRET}',
         projectKey: '${env:APP_PROJECT_KEY}',
-        region: '${env:APP_REGION}'
+        region: '${env:APP_REGION}',
+        widgetTestUrl: '${env:WIDGET_TEST_URL}'
     },
     oAuthScopes: {
         view: [],

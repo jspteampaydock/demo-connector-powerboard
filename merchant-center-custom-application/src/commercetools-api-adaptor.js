@@ -101,7 +101,7 @@ class CommerceToolsAPIAdapter {
     const isLive = group === 'live';
     let secretKey = isToken ? data.credentials_access_key : data.credentials_secret_key;
     if (secretKey && notificationUrl) {
-      const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, notificationUrl);
+      const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, notificationUrl, this.env.widgetTestUrl);
       powerboardApiAdaptor.registerNotifications().catch(error => {
         console.log(error.response.data.error)
       });

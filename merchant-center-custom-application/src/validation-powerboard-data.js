@@ -1,8 +1,11 @@
 const axios = require('axios');
 
 class ValidationPowerBoardData {
-    constructor(isLive = true) {
-        this.apiUrl = isLive ? 'https://api.powerboard.commbank.com.au' : 'https://api.preproduction.powerboard.commbank.com.au';
+    constructor(env, isLive = true) {
+        this.apiUrl = 'https://api.powerboard.commbank.com.au'
+        if(!isLive){
+            this.apiUrl = env.widgetTestUrl ?? 'https://api.preproduction.powerboard.commbank.com.au'
+        }
     }
 
     async validateConnections(form) {

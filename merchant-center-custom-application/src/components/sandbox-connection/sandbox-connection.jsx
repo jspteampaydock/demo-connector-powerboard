@@ -218,12 +218,16 @@ const SandboxConnectionForm = () => {
     initialValues: INITIAL_SANDBOX_CONNECTION_FORM,
     onSubmit: async (values, formik) => {
 
+      const env = useApplicationContext(
+          (context) => context.environment
+      );
+
       if (success) setSuccess(false);
       if (error) setError(false);
       setLoading(true);
 
       try {
-        let result = await new ValidationPowerboardData(false).validateConnections(values);
+        let result = await new ValidationPowerboardData(env,false).validateConnections(values);
         if(!result.isValid){
           setError({message: result.errors.join(',')});
           setLoading(false);

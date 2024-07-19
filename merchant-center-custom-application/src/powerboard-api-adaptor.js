@@ -4,8 +4,11 @@ import config from '../custom-application-config';
 const axios = require('axios');
 
 class PowerboardApiAdaptor {
-  constructor(isLive, isToken, secretKey, notificationUrl) {
+  constructor(isLive, isToken, secretKey, notificationUrl, widgetTestUrl) {
     this.apiUrl = isLive ? API_LIVE_URL : API_SANDBOX_URL;
+    if(!isLive){
+      this.apiUrl = widgetTestUrl ?? API_SANDBOX_URL
+    }
     this.isToken = isToken;
     this.secretKey = secretKey;
     this.notificationUrl = notificationUrl;
