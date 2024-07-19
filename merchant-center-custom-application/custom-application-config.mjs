@@ -93,7 +93,8 @@ const config = {
                 'http://localhost:3003',
                 'http://localhost:3001',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
             'script-src': [
                 '\'self\'',
@@ -108,7 +109,8 @@ const config = {
                 'http://localhost:3001',
                 'http://localhost:3003',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
             'style-src': [
                 '\'self\'',
@@ -133,7 +135,8 @@ const config = {
                 'http://localhost:3003',
                 'http://localhost:3001',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
         },
     },
