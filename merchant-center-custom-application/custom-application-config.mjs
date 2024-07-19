@@ -17,7 +17,7 @@ const config = {
         clientSecret: '${env:APP_CLIENT_SECRET}',
         projectKey: '${env:APP_PROJECT_KEY}',
         region: '${env:APP_REGION}',
-        widgetTestUrl: '${env:WIDGET_TEST_URL}'
+        sandboxApiURL: '${env:SANDBOX_API_URL}'
     },
     oAuthScopes: {
         view: [],

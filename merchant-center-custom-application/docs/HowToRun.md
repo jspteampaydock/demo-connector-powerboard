@@ -49,7 +49,7 @@ ENTRY_POINT_URI_PATH="***"
 CLOUD_IDENTIFIER=gcp-eu
 APPLICATION_URL="***"
 CUSTOM_APPLICATION_ID="***"
-WIDGET_TEST_URL="***"
+SANDBOX_API_URL="***"
 ```
 Replace the placeholder values with your actual Commercetools API credentials.
 

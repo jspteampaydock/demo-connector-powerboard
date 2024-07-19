@@ -4,7 +4,7 @@ class ValidationPowerBoardData {
     constructor(env, isLive = true) {
         this.apiUrl = 'https://api.powerboard.commbank.com.au'
         if(!isLive){
-            this.apiUrl = env.widgetTestUrl ?? 'https://api.preproduction.powerboard.commbank.com.au'
+            this.apiUrl = env.sandboxApiURL ?? 'https://api.preproduction.powerboard.commbank.com.au'
         }
     }
 

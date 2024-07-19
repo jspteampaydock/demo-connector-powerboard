@@ -25,8 +25,8 @@ deployAs:
           description: The commercetools region
           default: 'europe-west1.gcp'
           required: true
-        - key: WIDGET_TEST_URL
-          description: The widget test(stage/sandbox) url
+        - key: SANDBOX_API_URL
+          description: Sandbox api url
           default: 'https://api.preproduction.powerboard.commbank.com.au'
           required: true
   - name: extension
