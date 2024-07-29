@@ -10,10 +10,11 @@ async function execute(paymentObject) {
     const makePaymentRequestObj = JSON.parse(
         paymentObject.custom.fields.makePaymentRequest,
     )
-
+    let capturedAmount = paymentObject.amountPlanned.centAmount;
     if (paymentObject.amountPlanned.type === 'centPrecision') {
         const fraction = 10 ** paymentObject.amountPlanned.fractionDigits;
-        makePaymentRequestObj.amount.value = paymentObject.amountPlanned.centAmount / fraction;
+        capturedAmount = paymentObject.amountPlanned.centAmount / fraction;
+        makePaymentRequestObj.amount.value = capturedAmount;
     }
     let paymentActions = [];
     const actions = []
@@ -29,8 +30,11 @@ async function execute(paymentObject) {
 
     if (response.status === 'Failure') {
         const errorMessage = response.message ?? "Invalid transaction details"
-        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE,  JSON.stringify( {status : "Failure", message : errorMessage})));
-        paymentActions = await  deleteCustomFields(actions, paymentObject, customFieldsToDelete);
+        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
+            status: "Failure",
+            message: errorMessage
+        })));
+        paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete);
         return {
             actions: paymentActions
         };
@@ -47,7 +51,7 @@ async function execute(paymentObject) {
     if (paymentMethod) {
         actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_TYPE, paymentMethod));
     }
-    if(powerboardStatus) {
+    if (powerboardStatus) {
         actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_STATUS, powerboardStatus));
     }
     if (powerboardTransactionId) {
@@ -84,11 +88,14 @@ async function execute(paymentObject) {
             orderPaymentStatus: orderPaymentState,
             orderStatus: orderState
         })));
+        if (powerboardStatus === c.STATUS_TYPES.PAID) {
+            actions.push(createSetCustomFieldAction('CapturedAmount', capturedAmount));
+        }
     } else {
         customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
     }
 
-    paymentActions = await  deleteCustomFields(actions, paymentObject, customFieldsToDelete)
+    paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete)
     return {
         actions: paymentActions
     }
