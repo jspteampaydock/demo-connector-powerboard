@@ -42,7 +42,6 @@ async function readAndParseJsonFile(pathToJsonFileFromProjectRoot) {
 export default {
   getNotificationFromRequest,
   sendResponse,
-  collectRequestData,
   readAndParseJsonFile,
 
 }

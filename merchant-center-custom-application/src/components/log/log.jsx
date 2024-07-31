@@ -4,7 +4,6 @@ import {Pagination} from '@commercetools-uikit/pagination';
 import messages from './messages';
 import styles from './log.module.css';
 import './log.css';
-import axios from 'axios';
 import moment from 'moment';
 import {ContentNotification} from "@commercetools-uikit/notifications";
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';

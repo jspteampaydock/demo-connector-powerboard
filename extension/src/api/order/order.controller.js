@@ -39,7 +39,11 @@ async function processRequest(request, response) {
         }
         return httpUtils.sendResponse(result)
     } catch (err) {
-        return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}})
+        return httpUtils.sendResponse({
+            response,
+            statusCode: 400,
+            data:  httpUtils.handleUnexpectedPaymentError(orderObject, err),
+        })
     }
 }
 

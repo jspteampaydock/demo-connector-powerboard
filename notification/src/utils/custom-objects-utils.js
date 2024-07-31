@@ -31,7 +31,6 @@ async function removeItem(key) {
 }
 
 export default {
-    setItem,
     getItem,
     removeItem
 }

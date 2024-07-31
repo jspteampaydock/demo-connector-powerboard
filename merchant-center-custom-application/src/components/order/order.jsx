@@ -4,7 +4,6 @@ import { Pagination } from '@commercetools-uikit/pagination';
 import messages from './messages';
 import styles from './log.module.css';
 import './order.css';
-import axios from 'axios';
 import moment from 'moment';
 import PrimaryButton from '@commercetools-uikit/primary-button';
 import SecondaryButton from '@commercetools-uikit/secondary-button';

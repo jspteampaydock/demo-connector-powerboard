@@ -19,39 +19,6 @@ function deleteCustomFieldAction(name) {
     }
 }
 
-
-
-function getPowerboardStatus(paymentMethod, responseBodyJson) {
-    let powerboardStatus;
-    switch (paymentMethod) {
-        case 'bank_account':
-            powerboardStatus = responseBodyJson.status === 'requested' ? c.STATUS_TYPES.REQUESTED : c.STATUS_TYPES.FAILED;
-            break;
-        case 'cart':
-            if (responseBodyJson.status === 'complete') {
-                powerboardStatus = responseBodyJson.capture ? c.STATUS_TYPES.PAID : c.STATUS_TYPES.AUTHORIZE;
-            } else {
-                powerboardStatus = c.STATUS_TYPES.FAILED;
-            }
-            break;
-        default:
-            powerboardStatus = c.STATUS_TYPES.PENDING;
-    }
-    return powerboardStatus
-}
-
-
-function isValidJSON(jsonString) {
-    if (typeof jsonString === 'undefined') return true
-    try {
-        const o = JSON.parse(jsonString)
-        if (o && typeof o === 'object') return true
-    } catch (e) {
-        // continue regardless of error
-    }
-    return false
-}
-
 function isValidMetadata(str) {
     if (!str) return false
     return str.indexOf(' ') < 0
@@ -74,14 +41,6 @@ function getPaymentKeyUpdateAction(paymentKey, request, response) {
     return paymentKeyUpdateAction
 }
 
-
-function createChangeTransactionInteractionId(transactionId, interactionId) {
-    return {
-        action: 'changeTransactionInteractionId',
-        transactionId,
-        interactionId,
-    }
-}
 
 function createAddTransactionAction({
                                         type,
@@ -132,11 +91,8 @@ function createAddTransactionActionByResponse(amount, currencyCode, response) {
 
 export {
     createSetCustomFieldAction,
-    isValidJSON,
     isValidMetadata,
     getPaymentKeyUpdateAction,
-    getPowerboardStatus,
-    createChangeTransactionInteractionId,
     createAddTransactionActionByResponse,
     deleteCustomFieldAction
 }

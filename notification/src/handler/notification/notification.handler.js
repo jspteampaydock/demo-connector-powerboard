@@ -429,6 +429,11 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             },
             {
                 action: 'setCustomField',
+                name: 'PowerboardTransactionId',
+                value: chargeId
+            },
+            {
+                action: 'setCustomField',
                 name: 'PaymentExtensionRequest',
                 value: JSON.stringify({
                     action: 'FromNotification',
@@ -436,14 +441,6 @@ async function processRefundSuccessNotification(event, payment, notification, ct
                 })
             }
         ]
-
-        if (chargeId) {
-            updateActions.push({
-                action: 'setCustomField',
-                name: 'PowerboardTransactionId',
-                value: chargeId
-            })
-        }
 
         try {
             await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
@@ -456,7 +453,6 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             result.message = error
         }
     }
-    chargeId = chargeId ?? currentPayment.custom.fields.PowerboardTransactionId
     await addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: powerboardStatus,

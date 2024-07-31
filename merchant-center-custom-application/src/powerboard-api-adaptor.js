@@ -1,5 +1,4 @@
 import { API_LIVE_URL, API_SANDBOX_URL, NOTIFICATIONS } from './constants';
-import config from '../custom-application-config';
 
 const axios = require('axios');
 
