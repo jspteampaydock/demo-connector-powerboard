@@ -1,6 +1,6 @@
 {
   "name": "commercetools-powerboard-integration-extension",
-  "version": "1.0.0",
+  "version": "0.0.5",
   "description": "Integration between commercetools and Powerboard payment service provider",
   "license": "MIT",
   "type": "module",

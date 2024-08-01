@@ -11,7 +11,6 @@ import customObjectsUtils from "../utils/custom-objects-utils.js";
 
 async function makePayment(makePaymentRequestObj) {
     const orderId = makePaymentRequestObj.orderId;
-    const paymentSource = makePaymentRequestObj.PowerboardTransactionId;
     const paymentType = makePaymentRequestObj.PowerboardPaymentType;
     const amount = makePaymentRequestObj.amount.value;
     const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
@@ -33,9 +32,8 @@ async function makePayment(makePaymentRequestObj) {
 
     if (vaultToken === undefined || !vaultToken.length) {
         const data = {
-            token: paymentSource
+            token: makePaymentRequestObj.PowerboardTransactionId
         }
-
         response = await createVaultToken({
             data,
             userId: input.CommerceToolsUserId,
@@ -54,57 +52,13 @@ async function makePayment(makePaymentRequestObj) {
     if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
         customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
     }
-
-    if (paymentType === 'bank_accounts' && configurations.bank_accounts_use_on_checkout === 'Yes') {
-        response = await bankAccountFlow({
-            configurations,
-            input,
-            amount,
-            currency,
-            vaultToken,
-            customerId
-        });
-    }
-
-    if (paymentType === 'card' && configurations.card_use_on_checkout === 'Yes') {
-        response = await cardFlow({
-            configurations,
-            input,
-            amount,
-            currency,
-            vaultToken,
-            customerId
-        });
-    }
-
-    if (['Zippay', 'Afterpay v1'].includes(paymentType)) {
-        response = await apmFlow({
-            configurations,
-            input,
-            amount,
-            currency,
-            paymentSource,
-            paymentType
-        });
-    }
-
-    if (['PayPal Smart', 'Google Pay', 'Apple Pay', 'Afterpay v2'].includes(paymentType)) {
-        powerboardStatus = input.PowerboardPaymentStatus;
-        response = {
-            status: 'Success',
-            message: 'Create Charge',
-            powerboardStatus,
-            chargeId: input.charge_id
-        }
-    }
-
+    response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType);
     if (response) {
         status = response.status;
         message = response.message;
         powerboardStatus = response.powerboardStatus ?? powerboardStatus;
         chargeId = response.chargeId
     }
-
     await updateOrderPaymentState(orderId, powerboardStatus);
     await httpUtils.addPowerboardLog({
         powerboardChargeID: chargeId,
@@ -114,6 +68,44 @@ async function makePayment(makePaymentRequestObj) {
     })
 
     return response;
+}
+
+
+async function handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType) {
+    switch (paymentType) {
+        case 'card':
+            if (configurations.card_use_on_checkout === 'Yes') {
+                return await cardFlow({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken,
+                    customerId
+                });
+            }
+            break;
+        case 'Zippay':
+        case 'Afterpay v1':
+            return await apmFlow({
+                configurations,
+                input,
+                amount,
+                currency,
+                paymentType
+            });
+        case 'PayPal Smart':
+        case 'Google Pay':
+        case 'Apple Pay':
+        case 'Afterpay v2':
+            return {
+                status: 'Success',
+                message: 'Create Charge',
+                powerboardStatus: input.PowerboardPaymentStatus,
+                chargeId: input.charge_id,
+            };
+    }
+    return null;
 }
 
 async function getVaultToken(getVaultTokenRequestObj) {
@@ -354,7 +346,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -535,7 +527,7 @@ async function cardFraudInBuild3DsStandaloneCharge({configurations, input, amoun
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -562,7 +554,7 @@ async function card3DsCharge({configurations, input, amount, currency, vaultToke
     }
 
     const isDirectCharge = configurations.card_direct_charge === 'Enable';
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
     return result;
 }
@@ -848,7 +840,7 @@ async function cardCustomerCharge({
         authorization: !isDirectCharge
     }
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -885,7 +877,7 @@ async function cardCharge({configurations, input, amount, currency, vaultToken})
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -927,7 +919,7 @@ async function bankAccountFlow({configurations, input, amount, currency, vaultTo
     return result;
 }
 
-async function apmFlow({configurations, input, amount, currency, paymentSource, paymentType}) {
+async function apmFlow({configurations, input, amount, currency, paymentType}) {
     let isDirectCharge;
     let fraudServiceId = null;
     let fraud = false;
@@ -945,7 +937,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
         amount,
         reference: input.orderId ?? '',
         currency,
-        token: paymentSource,
+        token: input.PowerboardTransactionId,
         items: input.items ?? [],
         customer: {
             first_name: input.billing_first_name ?? '',
@@ -970,7 +962,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -996,7 +988,7 @@ async function createCustomer(data) {
     }
 }
 
-async function generateCustomerRequest(input, vaultToken, type, configurations) {
+function generateCustomerRequest(input, vaultToken, type, configurations) {
     const customerRequest = {
         first_name: input.billing_first_name ?? '',
         last_name: input.billing_last_name ?? '',
@@ -1018,7 +1010,7 @@ async function generateCustomerRequest(input, vaultToken, type, configurations) 
 
 async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type}) {
     let customerId = null;
-    const customerRequest = await generateCustomerRequest(input, vaultToken, type, configurations);
+    const customerRequest = generateCustomerRequest(input, vaultToken, type, configurations);
     const customerResponse = await createCustomer(customerRequest);
     if (customerResponse.status === 'Success' && customerResponse.customerId) {
         customerId = customerResponse.customerId;
@@ -1277,9 +1269,9 @@ async function createCharge(data, params = {}, returnObject = false) {
         }
         if (isFraud) {
             const addressLine2 = data.customer.payment_source.address_line2 ?? '';
-            if(addressLine2 === ''){
-                delete(data.customer.payment_source.address_line2);
-                delete(data.fraud.data.address_line2);
+            if (addressLine2 === '') {
+                delete (data.customer.payment_source.address_line2);
+                delete (data.fraud.data.address_line2);
             }
         }
 
@@ -1407,7 +1399,7 @@ async function buildRequestPowerboard(requestObj, methodOverride) {
     return request
 }
 
-async function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
+function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
     let powerboardStatus;
     if (paymentStatus === 'Success') {
         if (isDirectCharge) {

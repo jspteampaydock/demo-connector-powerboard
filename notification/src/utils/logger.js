@@ -21,21 +21,6 @@ function getLogger() {
     return obj
 }
 
-async function addPowerboardHttpLog(data) {
-    const logKey = `powerboard-notification-http_${Date.now()}`;
-
-    const logObject = {
-        container: "powerboard-notification-http-logs",
-        key: logKey,
-        value: data
-    };
-    const ctpClient = await config.getCtpClient()
-    ctpClient.create(
-        ctpClient.builder.customObjects,
-        JSON.stringify(logObject)
-    )
-}
-
 async function addPowerboardLog(data) {
     const logKey = `powerboard-log_${Date.now()}`;
     const logObject = {
@@ -51,4 +36,4 @@ async function addPowerboardLog(data) {
     )
 }
 
-export {getLogger, addPowerboardLog, addPowerboardHttpLog}
+export {getLogger, addPowerboardLog}

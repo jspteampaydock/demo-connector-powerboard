@@ -22,23 +22,6 @@ async function addPowerboardLog(data) {
     )
 }
 
-
-async function addPowerboardHttpLog(data) {
-    const logKey = `powerboard-http_${Date.now()}`;
-
-    const logObject = {
-        container: "powerboard-http-logs",
-        key: logKey,
-        value: data
-    };
-    const ctpClient = await config.getCtpClient()
-    ctpClient.create(
-        ctpClient.builder.customObjects,
-        JSON.stringify(logObject)
-    )
-}
-
-
 function collectRequestData(request) {
     return new Promise((resolve) => {
         const data = []
@@ -49,9 +32,6 @@ function collectRequestData(request) {
 
         request.on('end', () => {
             const dataStr = Buffer.concat(data).toString()
-            if (dataStr) {
-                this.addPowerboardHttpLog(JSON.parse(dataStr));
-            }
             resolve(dataStr)
         })
     })
@@ -103,7 +83,6 @@ export default {
     collectRequestData,
     sendResponse,
     getLogger,
-    addPowerboardHttpLog,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
     addPowerboardLog

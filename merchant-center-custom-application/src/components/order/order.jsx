@@ -357,11 +357,19 @@ const OrdersHistory = () => {
     const lastRowIndex = page * perPage;
     const firstRowIndex = lastRowIndex - perPage;
 
-    useEffect(async () => {
-        // Виконання запиту до сервера
-        let orders = await apiAdapter.getOrders();
-        setRows(orders);
-        setCurrentRows(rows.slice(firstRowIndex, lastRowIndex));
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                let orders = await apiAdapter.getOrders();
+                setRows(orders);
+                setCurrentRows(rows.slice(firstRowIndex, lastRowIndex));
+            } catch (error) {
+                setError({ message: `Error: ${error.message}` });
+            }
+        };
+
+        fetchOrders();
     }, []);
 
     useEffect(() => {

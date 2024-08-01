@@ -1,6 +1,6 @@
 {
   "name": "commercetools-powerboard-integration-notification",
-  "version": "11.4.0",
+  "version": "0.0.5",
   "description": "Part of the integration of Powerboard with commercetools responsible to receive and process notifications from Powerboard",
   "type": "module",
   "scripts": {

@@ -19,7 +19,7 @@ import validate from './validate';
 import ColorPicker from './color-picker';
 import PulseLoader from 'react-spinners/PulseLoader';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';
-import { INITIAL_SANDBOX_CONNECTION_FORM, INITIAL_WIDGET_FORM } from '../../constants';
+import {INITIAL_SANDBOX_CONNECTION_FORM, INITIAL_WIDGET_FORM} from '../../constants';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
 import Grid from '@commercetools-uikit/grid';
 
@@ -204,8 +204,9 @@ const WidgetConfigurationForm = () => {
         enableReinitialize: true,
     });
 
-    const getConfig = () => {
-        return apiAdapter.getConfigs(group).then((response) => {
+    const getConfig = async () => {
+        try {
+            const response = await apiAdapter.getConfigs(group);
             setVersion(response.version ?? null);
             setId(response.id ?? null);
             setCreatedAt(response.createdAt ?? null);
@@ -214,7 +215,23 @@ const WidgetConfigurationForm = () => {
                 let merged = { ...formik.values, ...response.value };
                 formik.setValues(merged);
             }
-        });
+        } catch (error) {
+            if (error.status === 404) {
+                try {
+                    await apiAdapter.setConfigs(group, {
+                        id: null,
+                        version: null,
+                        createdAt: null,
+                        value: INITIAL_WIDGET_FORM,
+                    });
+                    getConfig();
+                } catch (error) {
+                    setError({ message: error.message });
+                }
+            } else {
+                setError({ message: error.message });
+            }
+        }
     };
 
     useEffect(() => {
@@ -222,20 +239,7 @@ const WidgetConfigurationForm = () => {
         for (const property in messages) {
             result[messages[property]['id']] = messages[property]['defaultMessage'];
         }
-        getConfig().catch((error) => {
-            if (404 === error.status) {
-                apiAdapter.setConfigs(group, {
-                    id: null,
-                    version: null,
-                    createdAt: null,
-                    value: INITIAL_SANDBOX_CONNECTION_FORM,
-                }).then(() => getConfig().catch((error) => {
-                    setError({ message: error.message });
-                }));
-            } else {
-                setError({ message: error.message });
-            }
-        });
+        getConfig();
     }, []);
 
     return (

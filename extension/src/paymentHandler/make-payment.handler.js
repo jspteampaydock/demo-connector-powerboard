@@ -83,7 +83,7 @@ async function execute(paymentObject) {
     }
 
     if (powerboardStatus) {
-        const {orderState, orderPaymentState} = await getCommercetoolsStatusesByPowerboardStatus(powerboardStatus)
+        const {orderState, orderPaymentState} = getCommercetoolsStatusesByPowerboardStatus(powerboardStatus)
         actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
             orderPaymentStatus: orderPaymentState,
             orderStatus: orderState
@@ -101,7 +101,7 @@ async function execute(paymentObject) {
     }
 }
 
-async function getCommercetoolsStatusesByPowerboardStatus(powerboardStatus) {
+function getCommercetoolsStatusesByPowerboardStatus(powerboardStatus) {
     let orderPaymentState
     let orderState
 

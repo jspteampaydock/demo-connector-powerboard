@@ -218,37 +218,35 @@ const LiveConnectionForm = () => {
   const formik = useFormik({
     initialValues: INITIAL_LIVE_CONNECTION_FORM,
     onSubmit: async (values, formik) => {
-
       if (success) setSuccess(false);
       if (error) setError(false);
       setLoading(true);
 
       try {
         let result = await new ValidationPowerboardData(env).validateConnections(values);
-        if(!result.isValid){
-          setError({message: result.errors.join(',')});
+        if (!result.isValid) {
+          setError({ message: result.errors.join(',') });
           setLoading(false);
-        }else{
-          apiAdapter.setConfigs(group, {
-            id: id,
-            version: version,
-            createdAt: createdAt,
-            value: values,
-          })
-            .then((response) => {
-              setVersion(response.version ?? null);
-              setId(response.id ?? null);
-              setCreatedAt(response.createdAt ?? null);
-
-              setSuccess(true);
-              setLoading(false);
-            }).catch((error) => {
-            setError({message: error.message});
+        } else {
+          try {
+            const response = await apiAdapter.setConfigs(group, {
+              id: id,
+              version: version,
+              createdAt: createdAt,
+              value: values,
+            });
+            setVersion(response.version ?? null);
+            setId(response.id ?? null);
+            setCreatedAt(response.createdAt ?? null);
+            setSuccess(true);
             setLoading(false);
-          });
+          } catch (error) {
+            setError({ message: error.message });
+            setLoading(false);
+          }
         }
       } catch (error) {
-        setError({message: error.message});
+        setError({ message: error.message });
         formik.setErrors(error.data);
         setLoading(false);
       }
@@ -277,8 +275,9 @@ const LiveConnectionForm = () => {
     formik.handleChange(event);
   };
 
-  const getConfig = () => {
-    return apiAdapter.getConfigs(group).then((response) => {
+  const getConfig = async () => {
+    try {
+      const response = await apiAdapter.getConfigs(group);
       setVersion(response.version ?? null);
       setId(response.id ?? null);
       setCreatedAt(response.createdAt ?? null);
@@ -287,24 +286,27 @@ const LiveConnectionForm = () => {
         let merged = { ...formik.values, ...response.value };
         formik.setValues(merged);
       }
-    });
-  };
-
-  useEffect(() => {
-    getConfig().catch((error) => {
-      if (404 === error.status) {
-        apiAdapter.setConfigs(group, {
-          id: null,
-          version: null,
-          createdAt: null,
-          value: INITIAL_LIVE_CONNECTION_FORM,
-        }).then(() => getConfig().catch((error) => {
+    } catch (error) {
+      if (error.status === 404) {
+        try {
+          await apiAdapter.setConfigs(group, {
+            id: null,
+            version: null,
+            createdAt: null,
+            value: INITIAL_LIVE_CONNECTION_FORM,
+          });
+          getConfig();
+        } catch (error) {
           setError({ message: error.message });
-        }));
+        }
       } else {
         setError({ message: error.message });
       }
-    });
+    }
+  };
+
+  useEffect(() => {
+    getConfig();
   }, []);
 
 

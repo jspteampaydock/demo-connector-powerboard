@@ -63,45 +63,51 @@ class ValidationPowerBoardData {
             let publicKey = isToken ? form.credentials_widget_access_key : form.credentials_public_key;
             let secret = isToken ? form.credentials_access_key : form.credentials_secret_key;
             await this.validatePublicKey(publicKey, isToken);
-
             return await this.validateSecretKey(secret, isToken);
         } catch (error) {
-            throw new Error('Invalid Credentials.')
+            throw new Error(error.message || 'Invalid Credentials.');
         }
     }
 
-
     async validateSecretKey(secretKey, isToken = false) {
-        let config = {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        }
+        try {
+            let config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
 
-        config.headers[isToken ? 'x-access-token' : 'x-user-secret-key'] = secretKey;
+            config.headers[isToken ? 'x-access-token' : 'x-user-secret-key'] = secretKey;
 
-        let gateways = await axios.get(`${this.apiUrl}/v1/gateways?limit=1000`, config);
-        let services = await axios.get(`${this.apiUrl}/v1/services?limit=1000`, config);
+            let gateways = await axios.get(`${this.apiUrl}/v1/gateways?limit=1000`, config);
+            let services = await axios.get(`${this.apiUrl}/v1/services?limit=1000`, config);
 
-        return {
-            gatewayIds: gateways.data.resource.data.map((element) => element._id),
-            servicesIds: services.data.resource.data.map((element) => element._id),
+            return {
+                gatewayIds: gateways.data.resource.data.map((element) => element._id),
+                servicesIds: services.data.resource.data.map((element) => element._id),
+            };
+        } catch (error) {
+            throw new Error(error.response?.data?.message || error.message || 'Unavailable API service.');
         }
     }
 
     async validatePublicKey(publicKey, isToken = false) {
-        let config = {
-            headers: {
-                'Content-Type': 'application/json',
-            }
+        try {
+            let config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            config.headers[isToken ? 'x-access-token' : 'x-user-public-key'] = publicKey;
+
+            return await axios.post(`${this.apiUrl}/v1/payment_sources/tokens`, {
+                gateway_id: '',
+                type: ''
+            }, config);
+        } catch (error) {
+            throw new Error(error.response?.data?.message || error.message || 'Unavailable API service.');
         }
-
-        config.headers[isToken ? 'x-access-token' : 'x-user-public-key'] = publicKey;
-
-        return axios.post(`${this.apiUrl}/v1/payment_sources/tokens`, {
-            gateway_id: '',
-            type: ''
-        }, config);
     }
 }
 

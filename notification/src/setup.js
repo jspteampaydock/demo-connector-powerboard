@@ -2,7 +2,7 @@ import config from './config/config.js'
 
 async function setupNotificationResources() {
     try {
-        const moduleConfig = await config.getModuleConfig();
+        const moduleConfig = config.getModuleConfig();
         const ctpClient = await config.getCtpClient();
 
         if (moduleConfig.apiNotificationnBaseUrl) {
