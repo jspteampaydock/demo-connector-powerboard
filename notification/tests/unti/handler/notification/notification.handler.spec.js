@@ -6,10 +6,21 @@ const {setupServer} = require("../../../../src/server.js");
 const data = require('../../../../test-data/handler/notification/notificatrion.handler.transaction-failure.request.json');
 
 jest.mock('../../../../src/utils/ctp.js');
+jest.mock('../../../../src/config/config-loader.js');
+
+jest.mock('../../../../src/config/config-loader.js', () => {
+    const originalModule = jest.requireActual('../../../../src/config/config-loader.js');
+    const loaderConfigResult = require('../../../../test-data/handler/notification/notificationConfig.json')
+
+    return {
+        __esModule: true,
+        ...originalModule,
+        loadConfig: jest.fn(() => loaderConfigResult),
+    };
+});
 
 let ctpClient;
 let updateAction;
-
 
 describe('handler::notification::notification.handler', () => {
     const server = setupServer();

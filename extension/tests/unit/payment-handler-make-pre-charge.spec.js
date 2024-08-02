@@ -17,6 +17,16 @@ const {Response} = jest.requireActual('node-fetch');
 jest.mock('../../src/validator/authentication.js');
 jest.mock('node-fetch');
 jest.mock('../../src/config/config.js');
+jest.mock('../../src/config/config-loader.js', () => {
+    const originalModule = jest.requireActual('../../src/config/config-loader.js');
+    const loaderConfigResult = require('../../test-data/extentionConfig.json')
+
+    return {
+        __esModule: true,
+        ...originalModule,
+        loadConfig: jest.fn(() => loaderConfigResult),
+    };
+});
 
 configData.sandbox_mode = "Yes";
 
