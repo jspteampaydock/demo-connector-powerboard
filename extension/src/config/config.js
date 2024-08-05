@@ -12,7 +12,7 @@ function getModuleConfig() {
         port: config.port,
         logLevel: config.logLevel,
         apiExtensionBaseUrl: extensionBaseUrl,
-        basicAuth: false,
+        basicAuth: true,
         projectKey: config.projectKey,
         keepAliveTimeout: 30,
         addCommercetoolsLineIteprojectKey: false,
@@ -29,6 +29,21 @@ async function getCtpClient() {
 async function getPowerboardApiUrl() {
     const powerboardC = await getPowerboardConfig('connection');
     return powerboardC.api_url;
+}
+
+function getAuthorizationHeaderValue() {
+    const ctpConfig = getExtensionConfig()
+    let authHeaderValue = process.env.AUTH_HEADER_VALUE ?? null;
+    if (!authHeaderValue && (ctpConfig?.clientId && ctpConfig?.clientSecret)) {
+        const username = ctpConfig.clientId
+        const password = ctpConfig.clientSecret
+        const decodedAuthToken = `${username}:${password}`
+        authHeaderValue = Buffer.from(decodedAuthToken).toString('base64')
+    }
+    if (authHeaderValue) {
+        return `Basic ${authHeaderValue}`
+    }
+    return null
 }
 
 function getExtensionConfig() {
@@ -106,5 +121,6 @@ export default {
     getCtpClient,
     getWidgetConfig,
     getExtensionConfig,
-    getPowerboardApiUrl
+    getPowerboardApiUrl,
+    getAuthorizationHeaderValue
 }

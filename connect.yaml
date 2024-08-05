@@ -39,6 +39,8 @@ deployAs:
       securedConfiguration:
         - key: POWERBOARD_INTEGRATION_CONFIG
           description: Escaped JSON object
+        - key: AUTH_HEADER_VALUE
+          description: Escaped JSON object
   - name: notification
     applicationType: service
     endpoint: /

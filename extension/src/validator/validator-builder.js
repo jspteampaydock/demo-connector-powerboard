@@ -3,7 +3,6 @@ import {
 } from '../paymentHandler/payment-utils.js'
 import errorMessages from './error-messages.js'
 import {
-  getStoredCredential,
   hasValidAuthorizationHeader,
 } from './authentication.js'
 
@@ -19,11 +18,7 @@ function withPayment(paymentObject) {
       return this
     },
     validateAuthorizationHeader(authToken) {
-      const ctpProjectKey = paymentObject.custom.fields.CommercetoolsProjectKey ?? paymentObject.custom.fields.commercetoolsProjectKey
-      const storedCredential = getStoredCredential(ctpProjectKey)
-      if (!storedCredential)
-        errors.missingCredentials = errorMessages.MISSING_CREDENTIAL
-      else if (!hasValidAuthorizationHeader(storedCredential, authToken)) {
+      if (!hasValidAuthorizationHeader(authToken)) {
         errors.unauthorizedRequest = errorMessages.UNAUTHORIZED_REQUEST
       }
       return this

@@ -7,7 +7,8 @@ const mainLogger = utils.getLogger()
 async function ensureApiExtensions(
     ctpClient,
     ctpProjectKey,
-    ctpPowerboardIntegrationBaseUrl
+    ctpPowerboardIntegrationBaseUrl,
+    authHeaderValue
 ) {
 
     const apiExtensionTemplate = await utils.readAndParseJsonFile(
@@ -16,6 +17,14 @@ async function ensureApiExtensions(
     const apiExtensionOrderTemplate = await utils.readAndParseJsonFile(
         'resources/api-order-extension.json',
     )
+
+    apiExtensionTemplate.destination.authentication = JSON.parse(
+        `{` +
+        `      "type": "AuthorizationHeader",` +
+        `      "headerValue": "${authHeaderValue}"` +
+        `    }`,
+    )
+
     try {
         const logger = mainLogger.child({
             commercetools_project_key: ctpProjectKey,
