@@ -26,4 +26,11 @@ async function setupExtensionResources(apiExtensionBaseUrl) {
   )
 }
 
-export { setupExtensionResources }
+async function cleanupExtensionResources() {
+  // logic to cleanup resources
+}
+
+export {
+  setupExtensionResources,
+  cleanupExtensionResources
+}

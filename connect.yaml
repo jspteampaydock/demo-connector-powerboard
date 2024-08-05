@@ -33,7 +33,8 @@ deployAs:
     applicationType: service
     endpoint: /
     scripts:
-      postDeploy: npm install && npm run setup-resources
+      postDeploy: npm install && npm run extension:post-deploy
+      preUndeploy: npm install && npm run extension:pre-undeploy
     configuration:
       securedConfiguration:
         - key: POWERBOARD_INTEGRATION_CONFIG
