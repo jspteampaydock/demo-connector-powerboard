@@ -1,12 +1,13 @@
-// post-deployment.js
-const { setupExtensionResources } = require('./setup');
+import {serializeError} from "serialize-error";
+import {setupExtensionResources} from './setup.js'
 
 async function postDeployment() {
   try {
     await setupExtensionResources();
   } catch (error) {
-    console.error('Post-deployment: Failed to execute setupExtensionResources', error);
+    throw Error(`Error: ${JSON.stringify(serializeError(error))}`)
   }
 }
-
-postDeployment();
+export {
+  postDeployment
+};

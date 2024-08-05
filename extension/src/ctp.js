@@ -124,7 +124,6 @@ async function setUpClient(config) {
         fetchByContainerAndKey(uri, container, key) {
             return ctpClient.execute(this.buildRequestOptions(uri.byContainerAndKey(container, key).build()))
         },
-
         fetchBatches(uri, callback, opts = {accumulate: false}) {
             return this.process(
                 this.buildRequestOptions(uri.build()),

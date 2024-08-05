@@ -79,11 +79,28 @@ async function readAndParseJsonFile(pathToJsonFileFromProjectRoot) {
     return JSON.parse(fileContent)
 }
 
+async function deleteElementByKeyIfExists(ctpClient, key) {
+    try {
+        const { body } = await ctpClient.fetchByKey(
+            ctpClient.builder.extensions,
+            key,
+        )
+        if(body){
+            await ctpClient.delete(ctpClient.builder.extensions, body.id, body.version)
+        }
+        return body
+    } catch (err) {
+        if (err.statusCode === 404) return null
+        throw err
+    }
+}
+
 export default {
     collectRequestData,
     sendResponse,
     getLogger,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
-    addPowerboardLog
+    addPowerboardLog,
+    deleteElementByKeyIfExists
 }

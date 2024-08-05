@@ -1,12 +1,14 @@
-const { cleanupExtensionResources } = require('./setup');
+import {serializeError} from "serialize-error";
+import {cleanupExtensionResources} from './setup.js'
 
 async function preUndeployment() {
-  try {
-    await cleanupExtensionResources();
-    console.log('Pre-undeployment: cleanupExtensionResources executed successfully.');
-  } catch (error) {
-    console.error('Pre-undeployment: Failed to execute cleanupExtensionResources', error);
-  }
+    try {
+        await cleanupExtensionResources();
+    } catch (err) {
+        throw Error(`Error: ${JSON.stringify(serializeError(err))}`)
+    }
 }
 
-preUndeployment();
+export {
+    preUndeployment
+};
