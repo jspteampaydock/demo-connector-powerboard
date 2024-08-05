@@ -32,18 +32,7 @@ async function getPowerboardApiUrl() {
 }
 
 function getAuthorizationHeaderValue() {
-    const ctpConfig = getExtensionConfig()
-    let authHeaderValue = process.env.AUTH_HEADER_VALUE ?? null;
-    if (!authHeaderValue && (ctpConfig?.clientId && ctpConfig?.clientSecret)) {
-        const username = ctpConfig.clientId
-        const password = ctpConfig.clientSecret
-        const decodedAuthToken = `${username}:${password}`
-        authHeaderValue = Buffer.from(decodedAuthToken).toString('base64')
-    }
-    if (authHeaderValue) {
-        return `Basic ${authHeaderValue}`
-    }
-    return null
+   return  process.env.AUTH_HEADER_VALUE ?? null;
 }
 
 function getExtensionConfig() {

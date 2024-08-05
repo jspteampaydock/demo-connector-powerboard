@@ -5,17 +5,11 @@ function hasValidAuthorizationHeader(authTokenString) {
     return (config.getAuthorizationHeaderValue() === authTokenString)
 }
 
-function isBasicAuthEnabled() {
-    return config.getModuleConfig().basicAuth
-}
-
 function getAuthorizationRequestHeader(request) {
-    return request?.headers?.['authorization']
+    return request?.headers?.['x-auth-token']
 }
-
 
 export {
     hasValidAuthorizationHeader,
-    getAuthorizationRequestHeader,
-    isBasicAuthEnabled,
+    getAuthorizationRequestHeader
 }
