@@ -10,11 +10,10 @@ import c from "../config/constants.js";
 import {
     deleteCustomFieldAction
 } from './payment-utils.js'
-import {isBasicAuthEnabled} from '../validator/authentication.js'
 import errorMessages from '../validator/error-messages.js'
 
 async function handlePayment(paymentObject, authToken) {
-    if (isBasicAuthEnabled() && !authToken) {
+    if (!authToken) {
         return {
             errors: [
                 {
