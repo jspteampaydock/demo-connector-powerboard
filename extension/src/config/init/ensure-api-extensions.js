@@ -25,6 +25,13 @@ async function ensureApiExtensions(
         `    }`,
     )
 
+    apiExtensionOrderTemplate.destination.authentication = JSON.parse(
+        `{` +
+        `      "type": "AuthorizationHeader",` +
+        `      "headerValue": "${authHeaderValue}"` +
+        `    }`,
+    )
+
     try {
         const logger = mainLogger.child({
             commercetools_project_key: ctpProjectKey,

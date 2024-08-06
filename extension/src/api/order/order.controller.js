@@ -1,5 +1,8 @@
-import { serializeError } from 'serialize-error';
+import {serializeError} from 'serialize-error';
 import httpUtils from '../../utils.js';
+import {getAuthorizationRequestHeader, hasValidAuthorizationHeader} from "../../validator/authentication.js";
+import errorMessages from "../../validator/error-messages.js";
+
 
 const logger = httpUtils.getLogger();
 
@@ -13,7 +16,11 @@ async function processRequest(request, response) {
 
     let orderObject = {};
     try {
-        orderObject = await getOrderObject(request);
+        const authToken = getAuthorizationRequestHeader(request)
+        if (hasValidAuthorizationHeader(authToken)) {
+            return sendRequestIsUnauthorized();
+        }
+        orderObject = await getOrderObject(request, orderObject);
         if (orderObject.orderNumber) {
             return sendEmptyActionsResponse(response);
         }
@@ -21,6 +28,21 @@ async function processRequest(request, response) {
     } catch (err) {
         return sendErrorResponse(response, orderObject, err);
     }
+    return null;
+}
+
+function sendRequestIsUnauthorized() {
+    return httpUtils.sendResponse(
+        {
+            "statusCode": 400,
+            "message": errorMessages.UNAUTHORIZED_REQUEST,
+            "errors": [
+                {
+                    "code": "Unauthorized",
+                    "message": errorMessages.UNAUTHORIZED_REQUEST,
+                }
+            ]
+        })
 }
 
 function sendInvalidMethodResponse(response) {
@@ -39,7 +61,7 @@ function sendInvalidMethodResponse(response) {
 }
 
 function sendEmptyActionsResponse(response) {
-    return httpUtils.sendResponse({ response, statusCode: 200, data: { actions: [] } });
+    return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}});
 }
 
 async function updateOrderNumberIfEmpty(response, orderObject) {
@@ -80,4 +102,4 @@ function logParsingError(err) {
     logger.error(errorStackTrace);
 }
 
-export default { processRequest };
+export default {processRequest};

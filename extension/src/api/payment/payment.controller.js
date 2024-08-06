@@ -18,7 +18,7 @@ async function processRequest(request, response) {
                 errors: [
                     {
                         code: 'InvalidInput',
-                        message: `Invalid HTTP method. ${process.env.AUTH_HEADER_VALUE}`,
+                        message: `Invalid HTTP method.`,
                     },
                 ],
             },
