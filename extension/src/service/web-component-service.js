@@ -1,81 +1,210 @@
-import fetch from 'node-fetch'
-import {serializeError} from 'serialize-error'
-import config from '../config/config.js'
-import c from '../config/constants.js'
+import fetch from 'node-fetch';
+import {serializeError} from 'serialize-error';
+import config from '../config/config.js';
+import c from '../config/constants.js';
 import httpUtils from "../utils.js";
 import ctp from "../ctp.js";
 import customObjectsUtils from "../utils/custom-objects-utils.js";
-
-
-/* Powerboard integration */
+const logger = httpUtils.getLogger();
 
 async function makePayment(makePaymentRequestObj) {
-    const orderId = makePaymentRequestObj.orderId;
-    const paymentType = makePaymentRequestObj.PowerboardPaymentType;
-    const amount = makePaymentRequestObj.amount.value;
-    const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
-    const input = makePaymentRequestObj;
-    const additionalInformation = input.AdditionalInfo ?? {};
-    if (additionalInformation) {
-        Object.assign(input, additionalInformation);
-        delete input['AdditionalInfo'];
-    }
-    let vaultToken = makePaymentRequestObj.VaultToken;
-    let status = "Success";
-    let powerboardStatus = "powerboard-pending";
-    let message = "Create Charge";
-
-    let response = null;
-    let chargeId = 0;
-
-    const configurations = await config.getPowerboardConfig('connection');
-
-    if (vaultToken === undefined || !vaultToken.length) {
-        const data = {
-            token: makePaymentRequestObj.PowerboardTransactionId
+    try {
+        const orderId = makePaymentRequestObj.orderId;
+        const paymentType = makePaymentRequestObj.PowerboardPaymentType;
+        const amount = makePaymentRequestObj.amount.value;
+        const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
+        const input = makePaymentRequestObj;
+        const additionalInformation = input.AdditionalInfo ?? {};
+        if (additionalInformation) {
+            Object.assign(input, additionalInformation);
+            delete input['AdditionalInfo'];
         }
-        response = await createVaultToken({
-            data,
-            userId: input.CommerceToolsUserId,
-            saveCard: input.SaveCard,
-            type: paymentType,
-            configurations
-        })
-        if (response.status === 'Success') {
-            vaultToken = response.token;
+        let vaultToken = makePaymentRequestObj.VaultToken;
+        let status = "Success";
+        let powerboardStatus = "powerboard-pending";
+        let message = "Create Charge";
+
+        let response = null;
+        let chargeId = 0;
+
+        const configurations = await config.getPowerboardConfig('connection');
+
+        if (vaultToken === undefined || !vaultToken.length) {
+            const data = {
+                token: makePaymentRequestObj.PowerboardTransactionId
+            }
+            response = await createVaultToken({
+                data,
+                userId: input.CommerceToolsUserId,
+                saveCard: input.SaveCard,
+                type: paymentType,
+                configurations
+            });
+            if (response.status === 'Success') {
+                vaultToken = response.token;
+            }
+            status = response.status;
         }
-        status = response.status;
-    }
 
-    let customerId = null;
+        let customerId = null;
 
-    if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
-        customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
+        if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
+            customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
+        }
+        response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType);
+        if (response) {
+            status = response.status;
+            message = response.message;
+            powerboardStatus = response.powerboardStatus ?? powerboardStatus;
+            chargeId = response.chargeId;
+        }
+        await updateOrderPaymentState(orderId, powerboardStatus);
+        await httpUtils.addPowerboardLog({
+            powerboardChargeID: chargeId,
+            operation: powerboardStatus,
+            status,
+            message
+        });
+        return response;
+    } catch (error) {
+        logger.error(`Error in makePayment: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-    response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType);
-    if (response) {
-        status = response.status;
-        message = response.message;
-        powerboardStatus = response.powerboardStatus ?? powerboardStatus;
-        chargeId = response.chargeId
-    }
-    await updateOrderPaymentState(orderId, powerboardStatus);
-    await httpUtils.addPowerboardLog({
-        powerboardChargeID: chargeId,
-        operation: powerboardStatus,
-        status,
-        message
-    })
-
-    return response;
 }
 
-
 async function handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType) {
-    switch (paymentType) {
-        case 'card':
-            if (configurations.card_use_on_checkout === 'Yes') {
-                return await cardFlow({
+    try {
+        switch (paymentType) {
+            case 'card':
+                if (configurations.card_use_on_checkout === 'Yes') {
+                    return await cardFlow({
+                        configurations,
+                        input,
+                        amount,
+                        currency,
+                        vaultToken,
+                        customerId
+                    });
+                }
+                break;
+            case 'Zippay':
+            case 'Afterpay v1':
+                return await apmFlow({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    paymentType
+                });
+            case 'PayPal Smart':
+            case 'Google Pay':
+            case 'Apple Pay':
+            case 'Afterpay v2':
+                return {
+                    status: 'Success',
+                    message: 'Create Charge',
+                    powerboardStatus: input.PowerboardPaymentStatus,
+                    chargeId: input.charge_id,
+                };
+            default:
+                // Default case to handle unexpected or unknown payment types
+                return {
+                    status: 'Error',
+                    message: `Unknown payment type: ${paymentType}`,
+                    powerboardStatus: input.PowerboardPaymentStatus,
+                };
+        }
+        return null;
+    } catch (error) {
+        logger.error(`Error in handlePaymentType: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
+}
+
+async function getVaultToken(getVaultTokenRequestObj) {
+    try {
+        const {data, userId, saveCard, type} = getVaultTokenRequestObj;
+        const configurations = await config.getPowerboardConfig('connection');
+        return await createVaultToken({data, userId, saveCard, type, configurations});
+    } catch (error) {
+        logger.error(`Error in getVaultToken: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
+}
+
+async function createVaultToken({data, userId, saveCard, type, configurations}) {
+    try {
+        const {response} = await callPowerboard('/v1/vault/payment_sources/', data, 'POST');
+
+        if (response.status === 201) {
+            if (shouldSaveVaultToken({type, saveCard, userId, configurations})) {
+                await saveUserToken({token: response.resource.data, user_id: userId, customer_id: null});
+            }
+
+            return {
+                status: "Success",
+                token: response.resource.data.vault_token,
+            };
+        }
+        return {
+            status: "Failure",
+            message: response?.error?.message,
+        };
+    } catch (error) {
+        logger.error(`Error in createVaultToken: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
+}
+
+async function createPreCharge(data, capture = true) {
+    try {
+        const {response} = await callPowerboard(`/v1/charges/wallet?capture=${capture ? 'true' : 'false'}`, data, 'POST');
+
+        if (response.status === 201) {
+            return {
+                status: "Success",
+                token: response.resource.data.token,
+                chargeId: response.resource.data.charge._id
+            };
+        }
+        return {
+            status: "Failure",
+            message: response?.error?.message,
+        };
+    } catch (error) {
+        logger.error(`Error in createPreCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
+}
+
+async function createStandalone3dsToken(data) {
+    try {
+        const {response} = await callPowerboard('/v1/charges/standalone-3ds', data, 'POST');
+
+        if (response.status === 201) {
+            return {
+                status: "Success",
+                token: response.resource.data._3ds.token
+            };
+        }
+        return {
+            status: "Failure",
+            message: response?.error?.message,
+        };
+    } catch (error) {
+        logger.error(`Error in createStandalone3dsToken: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
+}
+
+async function cardFlow({configurations, input, amount, currency, vaultToken, customerId}) {
+    try {
+        let result;
+
+        switch (true) {
+            case (configurations.card_card_save === 'Enable' && !!customerId):
+            case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
+                result = await cardCustomerCharge({
                     configurations,
                     input,
                     amount,
@@ -83,153 +212,59 @@ async function handlePaymentType(input, configurations, vaultToken, customerId, 
                     vaultToken,
                     customerId
                 });
+                break;
+            case (
+                (configurations.card_3ds === 'Standalone 3DS' || configurations.card_3ds === 'In-built 3DS') &&
+                (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud')
+            ):
+                result = await cardFraud3DsCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken,
+                    customerId
+                });
+                break;
+            case (configurations.card_3ds === 'Standalone 3DS' || configurations.card_3ds === 'In-built 3DS'):
+                result = await card3DsCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken,
+                    customerId
+                });
+                break;
+            case (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud'):
+                result = await cardFraudCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken,
+                    customerId
+                });
+                break;
+            case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save === 'Vault token' && input.SaveCard): {
+                const tokenData = await getVaultTokenData(vaultToken);
+                await saveUserToken({
+                    token: tokenData,
+                    user_id: input.CommerceToolsUserId,
+                    customer_id: customerId,
+                });
+                result = await cardCharge({configurations, input, amount, currency, vaultToken});
             }
-            break;
-        case 'Zippay':
-        case 'Afterpay v1':
-            return await apmFlow({
-                configurations,
-                input,
-                amount,
-                currency,
-                paymentType
-            });
-        case 'PayPal Smart':
-        case 'Google Pay':
-        case 'Apple Pay':
-        case 'Afterpay v2':
-            return {
-                status: 'Success',
-                message: 'Create Charge',
-                powerboardStatus: input.PowerboardPaymentStatus,
-                chargeId: input.charge_id,
-            };
-    }
-    return null;
-}
-
-async function getVaultToken(getVaultTokenRequestObj) {
-    const {data, userId, saveCard, type} = getVaultTokenRequestObj;
-
-    const configurations = await config.getPowerboardConfig('connection');
-
-    return await createVaultToken({data, userId, saveCard, type, configurations});
-}
-
-async function createVaultToken({data, userId, saveCard, type, configurations}) {
-    const {response} = await callPowerboard('/v1/vault/payment_sources/', data, 'POST');
-
-    if (response.status === 201) {
-        if (shouldSaveVaultToken({type, saveCard, userId, configurations})) {
-            await saveUserToken({token: response.resource.data, user_id: userId, customer_id: null});
+                break;
+            default:
+                result = await cardCharge({configurations, input, amount, currency, vaultToken});
         }
 
-        return {
-            status: "Success",
-            token: response.resource.data.vault_token,
-        };
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFlow: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-    return {
-        status: "Failure",
-        message: response?.error?.message,
-    };
-}
-
-async function createPreCharge(data, capture = true) {
-    const {response} = await callPowerboard(`/v1/charges/wallet?capture=${capture ? 'true' : 'false'}`, data, 'POST');
-
-    if (response.status === 201) {
-        return {
-            status: "Success",
-            token: response.resource.data.token,
-            chargeId: response.resource.data.charge._id
-        }
-    }
-    return {
-        status: "Failure",
-        message: response?.error?.message,
-    };
-}
-
-async function createStandalone3dsToken(data) {
-    const {response} = await callPowerboard('/v1/charges/standalone-3ds', data, 'POST');
-
-    if (response.status === 201) {
-        return {
-            status: "Success",
-            token: response.resource.data._3ds.token
-        };
-    }
-    return {
-        status: "Failure",
-        message: response?.error?.message,
-    };
-}
-
-
-async function cardFlow({configurations, input, amount, currency, vaultToken, customerId}) {
-    let result;
-
-    switch (true) {
-        case (configurations.card_card_save === 'Enable' && !!customerId):
-        case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
-            result = await cardCustomerCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken,
-                customerId
-            });
-            break;
-        case (
-            (configurations.card_3ds === 'Standalone 3DS' || configurations.card_3ds === 'In-built 3DS') &&
-            (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud')
-        ):
-            result = await cardFraud3DsCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken,
-                customerId
-            });
-            break;
-        case (configurations.card_3ds === 'Standalone 3DS' || configurations.card_3ds === 'In-built 3DS'):
-            result = await card3DsCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken,
-                customerId
-            });
-            break;
-        case (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud'):
-            result = await cardFraudCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken,
-                customerId
-            });
-            break;
-        case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save === 'Vault token' && input.SaveCard): {
-            const tokenData = await getVaultTokenData(vaultToken);
-            await saveUserToken({
-                token: tokenData,
-                user_id: input.CommerceToolsUserId,
-                customer_id: customerId,
-            });
-            result = await cardCharge({configurations, input, amount, currency, vaultToken});
-        }
-            break;
-        default:
-            result = await cardCharge({configurations, input, amount, currency, vaultToken});
-    }
-
-    return result;
 }
 
 async function cardFraud3DsCharge({
@@ -240,401 +275,440 @@ async function cardFraud3DsCharge({
                                       vaultToken,
                                       customerId
                                   }) {
-    let result;
-    switch (true) {
-        case (configurations.card_3ds === 'In-built 3DS' && configurations.card_fraud === 'In-built Fraud'):
-            result = await cardFraud3DsInBuildCharge({configurations, input, amount, currency, vaultToken});
-            break;
+    try {
+        let result;
+        switch (true) {
+            case (configurations.card_3ds === 'In-built 3DS' && configurations.card_fraud === 'In-built Fraud'):
+                result = await cardFraud3DsInBuildCharge({configurations, input, amount, currency, vaultToken});
+                break;
 
-        case (configurations.card_3ds === 'Standalone 3DS' && configurations.card_fraud === 'Standalone Fraud'):
-            result = await cardFraud3DsStandaloneCharge({configurations, input, amount, currency, vaultToken});
-            break
+            case (configurations.card_3ds === 'Standalone 3DS' && configurations.card_fraud === 'Standalone Fraud'):
+                result = await cardFraud3DsStandaloneCharge({configurations, input, amount, currency, vaultToken});
+                break;
 
-        case (configurations.card_3ds === 'In-built 3DS' && configurations.card_fraud === 'Standalone Fraud'):
-            result = await cardFraudStandalone3DsInBuildCharge({
+            case (configurations.card_3ds === 'In-built 3DS' && configurations.card_fraud === 'Standalone Fraud'):
+                result = await cardFraudStandalone3DsInBuildCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken
+                });
+                break;
+
+            case (configurations.card_3ds === 'Standalone 3DS' && configurations.card_fraud === 'In-built Fraud'):
+                result = await cardFraudInBuild3DsStandaloneCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken
+                });
+                break;
+
+            default:
+                result = {
+                    status: 'Failure',
+                    message: 'In-built fraud & 3ds error',
+                    powerboardStatus: 'powerboard-failed'
+                };
+        }
+
+        if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
+            configurations.card_card_method_save === 'Customer with Gateway ID' ||
+            configurations.card_card_method_save === 'Customer without Gateway ID'
+        )) {
+            await createCustomerAndSaveVaultToken({
                 configurations,
                 input,
-                amount,
-                currency,
-                vaultToken
+                vaultToken,
+                type: 'card'
             });
-            break;
+        }
 
-        case (configurations.card_3ds === 'Standalone 3DS' && configurations.card_fraud === 'In-built Fraud'):
-            result = await cardFraudInBuild3DsStandaloneCharge({
-                configurations,
-                input,
-                amount,
-                currency,
-                vaultToken
-            });
-            break;
-
-        default:
-            result = {
-                status: 'Failure',
-                message: 'In-built fraud & 3ds error',
-                powerboardStatus: 'powerboard-failed'
-            }
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraud3DsCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
-        configurations.card_card_method_save === 'Customer with Gateway ID' ||
-        configurations.card_card_method_save === 'Customer without Gateway ID'
-    )) {
-        await createCustomerAndSaveVaultToken({
-            configurations,
-            input,
-            vaultToken,
-            type: 'card'
-        })
-    }
-
-    return result;
 }
 
 async function cardFraud3DsInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    if (configurations.card_3ds_flow === 'With OTT') {
-        payment_source.amount = amount;
-    } else {
-        payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        if (configurations.card_3ds_flow === 'With OTT') {
+            payment_source.amount = amount;
+        } else {
+            payment_source.vault_token = vaultToken;
+        }
+
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
+
+        const fraudData = {};
+        fraudData.data = getAdditionalFields(input);
+        fraudData.data.amount = amount;
+
+        if (configurations.card_fraud_service_id) {
+            fraudData.service_id = configurations.card_fraud_service_id;
+        }
+
+        const threeDsData = {
+            id: input.charge3dsId ?? ''
+        };
+
+        if (configurations.card_3ds_service_id) {
+            threeDsData.service_id = configurations.card_3ds_service_id;
+        }
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            _3ds: threeDsData,
+            fraud: fraudData,
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        const result = await createCharge(request, {directCharge: isDirectCharge});
+
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraud3DsInBuildCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-    }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
-
-    const fraudData = {};
-    fraudData.data = getAdditionalFields(input);
-    fraudData.data.amount = amount;
-
-    if (configurations.card_fraud_service_id) {
-        fraudData.service_id = configurations.card_fraud_service_id
-    }
-
-    const threeDsData = {
-        id: input.charge3dsId ?? ''
-    }
-
-    if (configurations.card_3ds_service_id) {
-        threeDsData.service_id = configurations.card_3ds_service_id
-    }
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        _3ds: threeDsData,
-        fraud: fraudData,
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-    return result;
 }
 
 async function cardFraud3DsStandaloneCharge({configurations, input, amount, currency, vaultToken}) {
-    const cacheData = {
-        method: 'cardFraud3DsStandaloneCharge',
-        capture: configurations.card_direct_charge === 'Enable',
-        charge3dsId: input.charge3dsId ?? ''
-    };
-
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-        cacheData.gateway_id = configurations.card_gateway_id;
-    }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-        cacheData.ccv = input.cvv;
-    }
-
-    const billingFirstName = input.billing_first_name ?? '';
-    const billingLastName = input.billing_last_name ?? '';
-    const billingEmail = input.billing_email ?? '';
-    const billingPhone = input.billing_phone ?? '';
-
-    const fraudData = getAdditionalFields(input);
-    fraudData.first_name = billingFirstName;
-    fraudData.last_name = billingLastName;
-    fraudData.email = billingEmail;
-    fraudData.phone = billingPhone;
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: billingFirstName,
-            last_name: billingLastName,
-            email: billingEmail,
-            phone: billingPhone,
-            payment_source
-        },
-        fraud: {
-            service_id: configurations.card_fraud_service_id ?? '',
-            data: fraudData
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    const result = await createCharge(request, {action: 'standalone-fraud'});
-
-    if (result.status === 'Success') {
-        cacheData.billingAddress = {
-            firstName: billingFirstName,
-            lastName: billingLastName,
-            email: billingEmail,
-            phone: billingPhone,
+    try {
+        const cacheData = {
+            method: 'cardFraud3DsStandaloneCharge',
+            capture: configurations.card_direct_charge === 'Enable',
+            charge3dsId: input.charge3dsId ?? ''
         };
 
-        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
-        result.powerboardStatus = 'powerboard-pending';
-    } else {
-        result.powerboardStatus = 'powerboard-failed';
-    }
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    return result;
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+            cacheData.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+            cacheData.ccv = input.cvv;
+        }
+
+        const billingFirstName = input.billing_first_name ?? '';
+        const billingLastName = input.billing_last_name ?? '';
+        const billingEmail = input.billing_email ?? '';
+        const billingPhone = input.billing_phone ?? '';
+
+        const fraudData = getAdditionalFields(input);
+        fraudData.first_name = billingFirstName;
+        fraudData.last_name = billingLastName;
+        fraudData.email = billingEmail;
+        fraudData.phone = billingPhone;
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: billingFirstName,
+                last_name: billingLastName,
+                email: billingEmail,
+                phone: billingPhone,
+                payment_source
+            },
+            fraud: {
+                service_id: configurations.card_fraud_service_id ?? '',
+                data: fraudData
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        const result = await createCharge(request, {action: 'standalone-fraud'});
+
+        if (result.status === 'Success') {
+            cacheData.billingAddress = {
+                firstName: billingFirstName,
+                lastName: billingLastName,
+                email: billingEmail,
+                phone: billingPhone,
+            };
+
+            await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
+            result.powerboardStatus = 'powerboard-pending';
+        } else {
+            result.powerboardStatus = 'powerboard-failed';
+        }
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraud3DsStandaloneCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 async function cardFraudStandalone3DsInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    const cacheData = {
-        method: 'cardFraudStandalone3DsInBuildCharge',
-        capture: configurations.card_direct_charge === 'Enable',
-        _3ds: {
-            id: input.charge3dsId ?? '',
-            service_id: configurations.card_3ds_service_id ?? '',
-        }
-    };
-
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-        cacheData.gateway_id = configurations.card_gateway_id;
-    }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-        cacheData.ccv = input.cvv;
-    }
-
-    const fraudData = getAdditionalFields(input);
-    fraudData.amount = amount;
-
-    const billingFirstName = input.billing_first_name ?? '';
-    const billingLastName = input.billing_last_name ?? '';
-    const billingEmail = input.billing_email ?? '';
-    const billingPhone = input.billing_phone ?? '';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: billingFirstName,
-            last_name: billingLastName,
-            email: billingEmail,
-            phone: billingPhone,
-            payment_source
-        },
-        fraud: {
-            service_id: configurations.card_fraud_service_id ?? '',
-            data: fraudData
-        }
-    }
-
-    const result = await createCharge(request, {action: 'standalone-fraud'});
-
-    if (result.status === 'Success') {
-        cacheData.billingAddress = {
-            firstName: billingFirstName,
-            lastName: billingLastName,
-            email: billingEmail,
-            phone: billingPhone
+    try {
+        const cacheData = {
+            method: 'cardFraudStandalone3DsInBuildCharge',
+            capture: configurations.card_direct_charge === 'Enable',
+            _3ds: {
+                id: input.charge3dsId ?? '',
+                service_id: configurations.card_3ds_service_id ?? '',
+            }
         };
 
-        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
-        result.powerboardStatus = 'powerboard-pending';
-    } else {
-        result.powerboardStatus = 'powerboard-failed';
-    }
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    return result;
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+            cacheData.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+            cacheData.ccv = input.cvv;
+        }
+
+        const fraudData = getAdditionalFields(input);
+        fraudData.amount = amount;
+
+        const billingFirstName = input.billing_first_name ?? '';
+        const billingLastName = input.billing_last_name ?? '';
+        const billingEmail = input.billing_email ?? '';
+        const billingPhone = input.billing_phone ?? '';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: billingFirstName,
+                last_name: billingLastName,
+                email: billingEmail,
+                phone: billingPhone,
+                payment_source
+            },
+            fraud: {
+                service_id: configurations.card_fraud_service_id ?? '',
+                data: fraudData
+            }
+        };
+
+        const result = await createCharge(request, {action: 'standalone-fraud'});
+
+        if (result.status === 'Success') {
+            cacheData.billingAddress = {
+                firstName: billingFirstName,
+                lastName: billingLastName,
+                email: billingEmail,
+                phone: billingPhone
+            };
+
+            await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
+            result.powerboardStatus = 'powerboard-pending';
+        } else {
+            result.powerboardStatus = 'powerboard-failed';
+        }
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraudStandalone3DsInBuildCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 async function cardFraudInBuild3DsStandaloneCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
+
+        const fraudData = getAdditionalFields(input);
+        fraudData.amount = amount;
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            _3ds_charge_id: input.charge3dsId ?? '',
+            fraud: {
+                service_id: configurations.card_fraud_service_id ?? '',
+                data: fraudData
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        const result = await createCharge(request, {directCharge: isDirectCharge});
+
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraudInBuild3DsStandaloneCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
-
-    const fraudData = getAdditionalFields(input);
-    fraudData.amount = amount;
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        _3ds_charge_id: input.charge3dsId ?? '',
-        fraud: {
-            service_id: configurations.card_fraud_service_id ?? '',
-            data: fraudData
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-
-
-    return result;
 }
 
 async function card3DsCharge({configurations, input, amount, currency, vaultToken, customerId}) {
-    let result;
-    if (configurations.card_3ds === 'In-built 3DS') {
-        result = await card3DsInBuildCharge({configurations, input, amount, currency, vaultToken});
-    } else {
-        result = await card3DsStandaloneCharge({configurations, input, amount, currency, vaultToken});
+    try {
+        let result;
+        if (configurations.card_3ds === 'In-built 3DS') {
+            result = await card3DsInBuildCharge({configurations, input, amount, currency, vaultToken});
+        } else {
+            result = await card3DsStandaloneCharge({configurations, input, amount, currency, vaultToken});
+        }
+
+        if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
+            configurations.card_card_method_save === 'Customer with Gateway ID' ||
+            configurations.card_card_method_save === 'Customer without Gateway ID'
+        )) {
+            await createCustomerAndSaveVaultToken({
+                configurations,
+                input,
+                vaultToken,
+                type: 'card'
+            });
+        }
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in card3DsCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
-        configurations.card_card_method_save === 'Customer with Gateway ID' ||
-        configurations.card_card_method_save === 'Customer without Gateway ID'
-    )) {
-        await createCustomerAndSaveVaultToken({
-            configurations,
-            input,
-            vaultToken,
-            type: 'card'
-        })
-    }
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-
-    return result;
 }
 
 async function card3DsInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    if (configurations.card_3ds_flow === 'With OTT') {
-        payment_source.amount = amount;
-    } else {
-        payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        if (configurations.card_3ds_flow === 'With OTT') {
+            payment_source.amount = amount;
+        } else {
+            payment_source.vault_token = vaultToken;
+        }
+
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const threeDsData = {
+            id: input.charge3dsId ?? ''
+        };
+
+        if (configurations.card_3ds_service_id) {
+            threeDsData.service_id = configurations.card_3ds_service_id;
+        }
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            _3ds: threeDsData,
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        return await createCharge(request, {directCharge: isDirectCharge});
+    } catch (error) {
+        logger.error(`Error in card3DsInBuildCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-    }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const threeDsData = {
-        id: input.charge3dsId ?? ''
-    }
-
-    if (configurations.card_3ds_service_id) {
-        threeDsData.service_id = configurations.card_3ds_service_id
-    }
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        _3ds: threeDsData,
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    return await createCharge(request, {directCharge: isDirectCharge});
 }
 
 async function card3DsStandaloneCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            _3ds_charge_id: input.charge3dsId ?? '',
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        return await createCharge(request, {directCharge: isDirectCharge});
+    } catch (error) {
+        logger.error(`Error in card3DsStandaloneCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        _3ds_charge_id: input.charge3dsId ?? '',
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    return await createCharge(request, {directCharge: isDirectCharge});
 }
 
 async function cardFraudCharge({
@@ -645,159 +719,172 @@ async function cardFraudCharge({
                                    vaultToken,
                                    customerId
                                }) {
-    let result;
-    if (configurations.card_fraud === 'In-built Fraud') {
-        result = await cardFraudInBuildCharge({configurations, input, amount, currency, vaultToken});
-    } else {
-        result = await cardFraudStandaloneCharge({
-            configurations,
-            input,
-            amount,
-            currency,
-            vaultToken
-        });
-    }
+    try {
+        let result;
+        if (configurations.card_fraud === 'In-built Fraud') {
+            result = await cardFraudInBuildCharge({configurations, input, amount, currency, vaultToken});
+        } else {
+            result = await cardFraudStandaloneCharge({
+                configurations,
+                input,
+                amount,
+                currency,
+                vaultToken
+            });
+        }
 
-    if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
-        configurations.card_card_method_save === 'Customer with Gateway ID' ||
-        configurations.card_card_method_save === 'Customer without Gateway ID'
-    )) {
-        await createCustomerAndSaveVaultToken({
-            configurations,
-            input,
-            vaultToken,
-            type: 'card'
-        })
-    }
+        if (result.status === 'Success' && configurations.card_card_save === 'Enable' && !customerId && (
+            configurations.card_card_method_save === 'Customer with Gateway ID' ||
+            configurations.card_card_method_save === 'Customer without Gateway ID'
+        )) {
+            await createCustomerAndSaveVaultToken({
+                configurations,
+                input,
+                vaultToken,
+                type: 'card'
+            });
+        }
 
-    return result;
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraudCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 async function cardFraudInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-    }
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
 
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
 
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
-    const billingFirstName = input.billing_first_name ?? '';
-    const billingLastName = input.billing_last_name ?? '';
-    const billingEmail = input.billing_email ?? '';
-    const billingPhone = input.billing_phone ?? '';
+        const billingFirstName = input.billing_first_name ?? '';
+        const billingLastName = input.billing_last_name ?? '';
+        const billingEmail = input.billing_email ?? '';
+        const billingPhone = input.billing_phone ?? '';
 
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: billingFirstName,
-            last_name: billingLastName,
-            email: billingEmail,
-            phone: billingPhone,
-            payment_source
-        },
-        fraud: {
-            service_id: configurations.card_fraud_service_id ?? '',
-            data: {
-                transaction: {
-                    billing: {
-                        customerEmailAddress: billingEmail,
-                        shippingFirstName: billingFirstName,
-                        shippingLastName: billingLastName,
-                        shippingAddress1: input.billing_address_1 ?? '',
-                        shippingAddress2: input.billing_address_2 ?? (input.billing_address_1 ?? ''),
-                        shippingCity: input.billing_city ?? '',
-                        shippingState: input.billing_state ?? '',
-                        shippingPostcode: input.billing_postcode ?? '',
-                        shippingCountry: input.billing_country ?? '',
-                        shippingPhone: billingPhone,
-                        shippingEmail: billingEmail,
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: billingFirstName,
+                last_name: billingLastName,
+                email: billingEmail,
+                phone: billingPhone,
+                payment_source
+            },
+            fraud: {
+                service_id: configurations.card_fraud_service_id ?? '',
+                data: {
+                    transaction: {
+                        billing: {
+                            customerEmailAddress: billingEmail,
+                            shippingFirstName: billingFirstName,
+                            shippingLastName: billingLastName,
+                            shippingAddress1: input.billing_address_1 ?? '',
+                            shippingAddress2: input.billing_address_2 ?? (input.billing_address_1 ?? ''),
+                            shippingCity: input.billing_city ?? '',
+                            shippingState: input.billing_state ?? '',
+                            shippingPostcode: input.billing_postcode ?? '',
+                            shippingCountry: input.billing_country ?? '',
+                            shippingPhone: billingPhone,
+                            shippingEmail: billingEmail,
+                        }
                     }
                 }
-            }
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
 
-
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-    if (result.status === 'Success') {
-        result.powerboardStatus = c.STATUS_TYPES.PENDING;
-    } else {
-        result.powerboardStatus = c.STATUS_TYPES.FAILED;
+        const result = await createCharge(request, {directCharge: isDirectCharge});
+        if (result.status === 'Success') {
+            result.powerboardStatus = c.STATUS_TYPES.PENDING;
+        } else {
+            result.powerboardStatus = c.STATUS_TYPES.FAILED;
+        }
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraudInBuildCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-    return result;
 }
 
 async function cardFraudStandaloneCharge({configurations, input, amount, currency, vaultToken}) {
-    const cacheData = {
-        method: 'cardFraudStandaloneCharge',
-        capture: configurations.card_direct_charge === 'Enable'
-    };
-
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-        cacheData.gateway_id = configurations.card_gateway_id;
-    }
-
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-        cacheData.ccv = input.cvv;
-    }
-
-    const fraudData = getAdditionalFields(input);
-    fraudData.amount = amount;
-
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        fraud: {
-            service_id: configurations.card_fraud_service_id ?? '',
-            data: fraudData
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-
-    const result = await createCharge(request, {action: 'standalone-fraud', directCharge: isDirectCharge});
-
-    if (result.status === 'Success') {
-        cacheData.billingAddress = {
-            firstName: input.billing_first_name ?? '',
-            lastName: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? ''
+    try {
+        const cacheData = {
+            method: 'cardFraudStandaloneCharge',
+            capture: configurations.card_direct_charge === 'Enable'
         };
 
-        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
-        result.powerboardStatus = 'powerboard-pending';
-    } else {
-        result.powerboardStatus = 'powerboard-failed';
-    }
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    return result;
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+            cacheData.gateway_id = configurations.card_gateway_id;
+        }
+
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+            cacheData.ccv = input.cvv;
+        }
+
+        const fraudData = getAdditionalFields(input);
+        fraudData.amount = amount;
+
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            fraud: {
+                service_id: configurations.card_fraud_service_id ?? '',
+                data: fraudData
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        const result = await createCharge(request, {action: 'standalone-fraud', directCharge: isDirectCharge});
+
+        if (result.status === 'Success') {
+            cacheData.billingAddress = {
+                firstName: input.billing_first_name ?? '',
+                lastName: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? ''
+            };
+
+            await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
+            result.powerboardStatus = 'powerboard-pending';
+        } else {
+            result.powerboardStatus = 'powerboard-failed';
+        }
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardFraudStandaloneCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 async function cardCustomerCharge({
@@ -808,162 +895,139 @@ async function cardCustomerCharge({
                                       vaultToken,
                                       customerId
                                   }) {
-    if (!customerId) {
-        customerId = await createCustomerAndSaveVaultToken({
-            configurations,
-            input,
-            vaultToken,
-            type: 'card'
-        });
+    try {
+        if (!customerId) {
+            customerId = await createCustomerAndSaveVaultToken({
+                configurations,
+                input,
+                vaultToken,
+                type: 'card'
+            });
+        }
+
+        const payment_source = getAdditionalFields(input);
+
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            customer_id: customerId,
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+        const result = await createCharge(request, {directCharge: isDirectCharge});
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardCustomerCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    const payment_source = getAdditionalFields(input);
-
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-    }
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer_id: customerId,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-
-
-    return result;
 }
 
 async function cardCharge({configurations, input, amount, currency, vaultToken}) {
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
+    try {
+        const payment_source = getAdditionalFields(input);
+        payment_source.vault_token = vaultToken;
 
-    if (configurations.card_gateway_id) {
-        payment_source.gateway_id = configurations.card_gateway_id;
-    }
+        if (configurations.card_gateway_id) {
+            payment_source.gateway_id = configurations.card_gateway_id;
+        }
 
-    if (input.cvv) {
-        payment_source.card_ccv = input.cvv;
-    }
+        if (input.cvv) {
+            payment_source.card_ccv = input.cvv;
+        }
 
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+        const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-
-
-    return result;
-}
-
-async function bankAccountFlow({configurations, input, amount, currency, vaultToken, customerId}) {
-    let result;
-    if (
-        configurations.bank_accounts_bank_account_save === 'Enable' &&
-        input.SaveCard &&
-        (
-            configurations.bank_accounts_bank_method_save === 'Customer with Gateway ID' ||
-            configurations.bank_accounts_bank_method_save === 'Customer without Gateway ID'
-        )
-    ) {
-        result = await bankAccountChargeWithCustomerId({
-            configurations,
-            input,
+        const request = {
             amount,
+            reference: input.orderId ?? '',
             currency,
-            vaultToken,
-            customerId
-        });
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? '',
+                payment_source
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
 
-        result.powerboardStatus = result.status === 'Success' ? 'powerboard-received' : 'powerboard-failed';
-    } else {
-        result = await bankAccountDirectCharge({
-            configurations,
-            input,
-            customerId,
-            vaultToken,
-            amount,
-            currency
-        });
+        const result = await createCharge(request, {directCharge: isDirectCharge});
 
-        result.powerboardStatus = result.status === 'Success' ? 'powerboard-requested' : 'powerboard-failed';
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+
+        return result;
+    } catch (error) {
+        logger.error(`Error in cardCharge: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-
-    return result;
 }
 
 async function apmFlow({configurations, input, amount, currency, paymentType}) {
-    let isDirectCharge;
-    let fraudServiceId = null;
-    let fraud = false;
-    if (paymentType === 'Zippay') {
-        isDirectCharge = configurations.alternative_payment_methods_zippay_direct_charge === 'Enable';
-        fraudServiceId = configurations.alternative_payment_methods_zippay_fraud_service_id;
-        fraud = configurations.alternative_payment_methods_zippay_fraud === "Enable";
-    } else {
-        isDirectCharge = true;
-        fraudServiceId = configurations.alternative_payment_methods_afterpay_v1_fraud_service_id;
-        fraud = configurations.alternative_payment_methods_afterpay_v1_fraud === "Enable";
-    }
-
-    const request = {
-        amount,
-        reference: input.orderId ?? '',
-        currency,
-        token: input.PowerboardTransactionId,
-        items: input.items ?? [],
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? ''
-        },
-        capture: isDirectCharge,
-        authorization: !isDirectCharge
-    }
-
-    if (fraud && fraudServiceId) {
-        const fraudData = getAdditionalFields(input);
-        fraudData.first_name = input.billing_first_name ?? '';
-        fraudData.last_name = input.billing_last_name ?? '';
-        fraudData.email = input.billing_email ?? '';
-        fraudData.phone = input.billing_phone ?? '';
-        request.fraud = {
-            service_id: fraudServiceId,
-            data: fraudData
+    try {
+        let isDirectCharge;
+        let fraudServiceId = null;
+        let fraud = false;
+        if (paymentType === 'Zippay') {
+            isDirectCharge = configurations.alternative_payment_methods_zippay_direct_charge === 'Enable';
+            fraudServiceId = configurations.alternative_payment_methods_zippay_fraud_service_id;
+            fraud = configurations.alternative_payment_methods_zippay_fraud === "Enable";
+        } else {
+            isDirectCharge = true;
+            fraudServiceId = configurations.alternative_payment_methods_afterpay_v1_fraud_service_id;
+            fraud = configurations.alternative_payment_methods_afterpay_v1_fraud === "Enable";
         }
-    }
 
-    const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-    return result;
+        const request = {
+            amount,
+            reference: input.orderId ?? '',
+            currency,
+            token: input.PowerboardTransactionId,
+            items: input.items ?? [],
+            customer: {
+                first_name: input.billing_first_name ?? '',
+                last_name: input.billing_last_name ?? '',
+                email: input.billing_email ?? '',
+                phone: input.billing_phone ?? ''
+            },
+            capture: isDirectCharge,
+            authorization: !isDirectCharge
+        };
+
+        if (fraud && fraudServiceId) {
+            const fraudData = getAdditionalFields(input);
+            fraudData.first_name = input.billing_first_name ?? '';
+            fraudData.last_name = input.billing_last_name ?? '';
+            fraudData.email = input.billing_email ?? '';
+            fraudData.phone = input.billing_phone ?? '';
+            request.fraud = {
+                service_id: fraudServiceId,
+                data: fraudData
+            };
+        }
+
+        const result = await createCharge(request, {directCharge: isDirectCharge});
+        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+        return result;
+    } catch (error) {
+        logger.error(`Error in apmFlow: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 async function createCustomer(data) {
@@ -981,6 +1045,7 @@ async function createCustomer(data) {
             message: response.data?.error?.message,
         };
     } catch (error) {
+        logger.error(`Error in createCustomer: ${JSON.stringify(serializeError(error))}`);
         return {
             status: "Failure",
             message: error.message || 'Unknown error',
@@ -997,13 +1062,10 @@ function generateCustomerRequest(input, vaultToken, type, configurations) {
         payment_source: {
             vault_token: vaultToken
         }
-    }
+    };
 
     if (type === 'card' && configurations.card_card_method_save === 'Customer with Gateway ID' && configurations.card_gateway_id) {
         customerRequest.payment_source.gateway_id = configurations.card_gateway_id;
-    }
-    if (type === 'bank_accounts' && configurations.bank_accounts_bank_method_save === 'Customer with Gateway ID' && configurations.bank_accounts_gateway_id) {
-        customerRequest.payment_source.gateway_id = configurations.bank_accounts_gateway_id;
     }
     return customerRequest;
 }
@@ -1020,17 +1082,13 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             operation: 'Create Customer',
             status: customerResponse.status,
             message: `Create Customer ${customerId}`
-        })
+        });
 
         if (
             shouldSaveVaultToken({type, saveCard: input.SaveCard, userId: input.CommerceToolsUserId, configurations}) &&
             (
                 (
                     type === 'card' && ['Customer with Gateway ID', 'Customer without Gateway ID'].includes(configurations.card_card_method_save)
-                )
-                ||
-                (
-                    type === 'bank_accounts' && ['Customer with Gateway ID', 'Customer without Gateway ID'].includes(configurations.bank_accounts_bank_method_save)
                 )
             )
         ) {
@@ -1040,14 +1098,14 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
                 user_id: input.CommerceToolsUserId,
                 customer_id: customerId,
             });
-            const messageLog = result.success ? 'Customer Vault Token saved successfully' : result.error
-            const statusLog = result.success ? 'Success' : 'Failure'
+            const messageLog = result.success ? 'Customer Vault Token saved successfully' : result.error;
+            const statusLog = result.success ? 'Success' : 'Failure';
             await httpUtils.addPowerboardLog({
                 powerboardChargeID: input.PowerboardTransactionId,
                 operation: 'Save Customer Vault Token',
                 status: statusLog,
                 message: messageLog
-            })
+            });
         }
     } else {
         await httpUtils.addPowerboardLog({
@@ -1055,7 +1113,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             operation: 'Create Customer',
             status: customerResponse.status,
             message: customerResponse.message
-        })
+        });
     }
 
     return customerId;
@@ -1067,6 +1125,7 @@ async function getVaultTokenData(token) {
 
         return response.resource.data;
     } catch (error) {
+        logger.error(`Error in getVaultTokenData: ${JSON.stringify(serializeError(error))}`);
         return null;
     }
 }
@@ -1076,29 +1135,28 @@ function shouldSaveVaultToken({type, saveCard, userId, configurations}) {
     if (type === 'card') {
         shouldSaveCard = shouldSaveCard && (configurations.card_card_save === 'Enable');
     }
-    if (type === 'bank_accounts') {
-        shouldSaveCard = shouldSaveCard && (configurations.bank_accounts_bank_account_save === 'Enable');
-    }
-
     return userId && (userId !== 'not authorized') && shouldSaveCard;
 }
 
 async function saveUserToken({token, user_id, customer_id}) {
-    const unique_key = token.type === 'card' ? (token.card_number_bin + token.card_number_last4) : (token.account_routing + token.account_number)
+    try {
+        const unique_key = token.type === 'card' ? (token.card_number_bin + token.card_number_last4) : (token.account_routing + token.account_number);
 
-    const title = getVaultTokenTitle(token);
-
-    const type = token.type === 'card' ? 'card' : 'bank_accounts';
-
-    return await insertOrUpdateUserVaultToken({
-        unique_key,
-        user_id,
-        customer_id,
-        type,
-        vault_token: token.vault_token,
-        title,
-        data: token
-    })
+        const title = getVaultTokenTitle(token);
+        const type = 'card';
+        return await insertOrUpdateUserVaultToken({
+            unique_key,
+            user_id,
+            customer_id,
+            type,
+            vault_token: token.vault_token,
+            title,
+            data: token
+        });
+    } catch (error) {
+        logger.error(`Error in saveUserToken: ${JSON.stringify(serializeError(error))}`);
+        throw error;
+    }
 }
 
 function getVaultTokenTitle(tokenData) {
@@ -1111,10 +1169,7 @@ function getVaultTokenTitle(tokenData) {
                 expire_month = `0${expire_month}`;
             }
             const card_scheme = tokenData.card_scheme.charAt(0).toUpperCase() + tokenData.card_scheme.slice(1);
-            title = `${card_scheme} ${tokenData.card_number_last4} ${expire_month}/${tokenData.expire_year}`
-        }
-        if (tokenData.type === 'bank_account') {
-            title = `${tokenData.account_name} ${tokenData.account_number}`;
+            title = `${card_scheme} ${tokenData.card_number_last4} ${expire_month}/${tokenData.expire_year}`;
         }
     }
 
@@ -1122,14 +1177,12 @@ function getVaultTokenTitle(tokenData) {
 }
 
 async function insertOrUpdateUserVaultToken({unique_key, user_id, customer_id, type, vault_token, title, data}) {
-
-    const ctpClient = await ctp.get(config.getExtensionConfig())
+    const ctpClient = await ctp.get(config.getExtensionConfig());
     const key = `${type}-${unique_key}`;
 
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
         if (response?.body) {
-
             let version = response.body.version;
             let actions = [{
                 action: 'setCustomType',
@@ -1155,7 +1208,7 @@ async function insertOrUpdateUserVaultToken({unique_key, user_id, customer_id, t
                     customer_id,
                     data,
                     title
-                }
+                };
             }
 
             actions = [{
@@ -1173,12 +1226,13 @@ async function insertOrUpdateUserVaultToken({unique_key, user_id, customer_id, t
 
         return {success: false};
     } catch (error) {
+        logger.error(`Error in insertOrUpdateUserVaultToken: ${JSON.stringify(serializeError(error))}`);
         return {success: false, error: error.message};
     }
 }
 
 async function getCustomerIdByVaultToken(user_id, vault_token) {
-    const ctpClient = await ctp.get(config.getExtensionConfig())
+    const ctpClient = await ctp.get(config.getExtensionConfig());
     let customerId = null;
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
@@ -1196,57 +1250,9 @@ async function getCustomerIdByVaultToken(user_id, vault_token) {
 
         return customerId;
     } catch (error) {
-        return customerId;
+        logger.error(`Error in getCustomerIdByVaultToken: ${JSON.stringify(serializeError(error))}`);
+        throw error
     }
-}
-
-async function bankAccountChargeWithCustomerId({
-                                                   configurations,
-                                                   input,
-                                                   amount,
-                                                   currency,
-                                                   vaultToken,
-                                                   customerId
-                                               }) {
-    if (!customerId) {
-        customerId = await createCustomerAndSaveVaultToken({
-            configurations,
-            input,
-            vaultToken,
-            type: 'bank_accounts'
-        });
-    }
-
-    return await bankAccountDirectCharge({configurations, input, customerId, vaultToken, amount, currency});
-}
-
-async function bankAccountDirectCharge({configurations, input, customerId, vaultToken, amount, currency}) {
-    const payment_source = getAdditionalFields(input);
-    payment_source.vault_token = vaultToken;
-    payment_source.type = 'bank_account';
-
-    if (configurations.bank_accounts_gateway_id) {
-        payment_source.gateway_id = configurations.bank_accounts_gateway_id;
-    }
-
-    const data = {
-        reference: input.orderId ?? '',
-        amount,
-        currency,
-        customer: {
-            first_name: input.billing_first_name ?? '',
-            last_name: input.billing_last_name ?? '',
-            email: input.billing_email ?? '',
-            phone: input.billing_phone ?? '',
-            payment_source
-        }
-    };
-
-    if (customerId) {
-        data.customer_id = customerId;
-    }
-
-    return await createCharge(data);
 }
 
 async function createCharge(data, params = {}, returnObject = false) {
@@ -1295,6 +1301,7 @@ async function createCharge(data, params = {}, returnObject = false) {
             chargeId: '0'
         };
     } catch (error) {
+        logger.error(`Error in createCharge: ${JSON.stringify(serializeError(error))}`);
         return {
             status: "Failure",
             message: error.message || 'Unknown error',
@@ -1304,36 +1311,35 @@ async function createCharge(data, params = {}, returnObject = false) {
 }
 
 function getAdditionalFields(input) {
-
     const additionalFields = {
         address_country: input.address_country ?? '',
         address_postcode: input.address_postcode ?? '',
         address_city: input.address_city ?? '',
         address_line1: input.address_line ?? '',
         address_line2: input.address_line2 ?? (input.address_line ?? ''),
-    }
+    };
 
     const addressState = input.address_state ?? '';
     if (addressState) {
         additionalFields.addressState = addressState;
     }
-    return additionalFields
+    return additionalFields;
 }
 
 async function callPowerboard(url, data, method) {
-    let returnedRequest
-    let returnedResponse
+    let returnedRequest;
+    let returnedResponse;
     url = await generatePowerboardUrlAction(url);
     try {
-        const {response, request} = await fetchAsyncPowerboard(url, data, method)
-        returnedRequest = request
-        returnedResponse = response
+        const {response, request} = await fetchAsyncPowerboard(url, data, method);
+        returnedRequest = request;
+        returnedResponse = response;
     } catch (err) {
-        returnedRequest = {body: JSON.stringify(data)}
-        returnedResponse = serializeError(err)
+        returnedRequest = {body: JSON.stringify(data)};
+        returnedResponse = serializeError(err);
     }
 
-    return {request: returnedRequest, response: returnedResponse}
+    return {request: returnedRequest, response: returnedResponse};
 }
 
 async function fetchAsyncPowerboard(
@@ -1341,29 +1347,27 @@ async function fetchAsyncPowerboard(
     requestObj,
     method
 ) {
-    let response
-    let responseBody
-    let responseBodyInText
-    const request = await buildRequestPowerboard(requestObj, method)
+    let response;
+    let responseBody;
+    let responseBodyInText;
+    const request = await buildRequestPowerboard(requestObj, method);
 
     try {
-        response = await fetch(url, request)
-        responseBodyInText = await response.text()
-        responseBody = responseBodyInText ? JSON.parse(responseBodyInText) : ''
+        response = await fetch(url, request);
+        responseBodyInText = await response.text();
+        responseBody = responseBodyInText ? JSON.parse(responseBodyInText) : '';
     } catch (err) {
         if (response)
-            // Handle non-JSON format response
             throw new Error(
                 `Unable to receive non-JSON format resposne from Powerboard API : ${responseBodyInText}`,
-            )
-        // Error in fetching URL
-        else throw err
+            );
+        else throw err;
     } finally {
         if (responseBody.additionalData) {
-            delete responseBody.additionalData
+            delete responseBody.additionalData;
         }
     }
-    return {response: responseBody, request}
+    return {response: responseBody, request};
 }
 
 async function generatePowerboardUrlAction(url) {
@@ -1373,20 +1377,20 @@ async function generatePowerboardUrlAction(url) {
 
 async function buildRequestPowerboard(requestObj, methodOverride) {
     const powerboardCredentials = await config.getPowerboardConfig('connection');
-    let requestHeaders = {}
+    let requestHeaders = {};
 
     if (powerboardCredentials.credentials_type === 'credentials') {
         requestHeaders = {
             'X-Commercetools-Meta': 'V1.0.0_commercetools',
             'Content-Type': 'application/json',
             'x-user-secret-key': powerboardCredentials.credentials_secret_key
-        }
+        };
     } else {
         requestHeaders = {
             'X-Commercetools-Meta': 'V1.0.0_commercetools',
             'Content-Type': 'application/json',
             'x-access-token': powerboardCredentials.credentials_access_key
-        }
+        };
     }
 
     const request = {
@@ -1396,7 +1400,7 @@ async function buildRequestPowerboard(requestObj, methodOverride) {
     if (methodOverride !== 'GET') {
         request.body = JSON.stringify(requestObj);
     }
-    return request
+    return request;
 }
 
 function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
@@ -1413,17 +1417,16 @@ function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
     return powerboardStatus;
 }
 
-
 async function updateOrderPaymentState(orderId, status) {
-    const ctpConfig = config.getExtensionConfig()
-    const ctpClient = await ctp.get(ctpConfig)
-    const paymentObject = await getPaymentByKey(ctpClient, orderId)
+    const ctpConfig = config.getExtensionConfig();
+    const ctpClient = await ctp.get(ctpConfig);
+    const paymentObject = await getPaymentByKey(ctpClient, orderId);
     if (paymentObject) {
         const updateData = [{
             action: 'setCustomField',
             name: 'PowerboardPaymentStatus',
             value: status
-        }]
+        }];
 
         const updatedOrder = await updatePaymentByKey(ctpClient, paymentObject, updateData);
         if (updatedOrder.statusCode === 200) {
@@ -1434,17 +1437,17 @@ async function updateOrderPaymentState(orderId, status) {
     return false;
 }
 
-
 async function getPaymentByKey(ctpClient, paymentKey) {
     try {
-        const result = await ctpClient.fetchByKey(ctpClient.builder.payments, paymentKey)
-        return result.body
+        const result = await ctpClient.fetchByKey(ctpClient.builder.payments, paymentKey);
+        return result.body;
     } catch (err) {
-        if (err.statusCode === 404) return null
+        if (err.statusCode === 404) return null;
         const errMsg =
             `Failed to fetch a payment` +
-            `Error: ${JSON.stringify(serializeError(err))}`
-        throw new Error(errMsg)
+            `Error: ${JSON.stringify(serializeError(err))}`;
+        logger.error(errMsg);
+        throw err;
     }
 }
 
@@ -1455,17 +1458,15 @@ async function updatePaymentByKey(ctpClient, paymentObject, updateData) {
             paymentObject.id,
             paymentObject.version,
             updateData
-        )
+        );
     } catch (err) {
-        const errMsg =
-            `Unexpected error on payment update with ID: ${paymentObject.id}.` +
-            `Failed actions: ${JSON.stringify(err)}`
-        throw new Error(errMsg)
+        logger.error(`Unexpected error on payment update with ID: ${paymentObject.id}. Failed actions: ${JSON.stringify(err)}`);
+        throw err;
     }
 }
 
 async function getUserVaultTokens(user_id) {
-    const ctpClient = await ctp.get(config.getExtensionConfig())
+    const ctpClient = await ctp.get(config.getExtensionConfig());
     const result = [];
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
@@ -1480,23 +1481,28 @@ async function getUserVaultTokens(user_id) {
 
         return result;
     } catch (error) {
-        return result;
+        logger.error(`Error in getUserVaultTokens: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
 }
 
-
 async function updatePowerboardStatus(endpoint, method, data) {
-    const {response} = await callPowerboard(endpoint, data, method);
-    if ([200, 201].includes(response.status)) {
-        return {
-            status: "Success",
-            chargeId: response.resource.data._id
+    try {
+        const {response} = await callPowerboard(endpoint, data, method);
+        if ([200, 201].includes(response.status)) {
+            return {
+                status: "Success",
+                chargeId: response.resource.data._id
+            };
         }
+        return {
+            status: "Failure",
+            message: response?.error?.message,
+        };
+    } catch (error) {
+        logger.error(`Error in updatePowerboardStatus: ${JSON.stringify(serializeError(error))}`);
+        throw error;
     }
-    return {
-        status: "Failure",
-        message: response?.error?.message,
-    };
 }
 
 export {
@@ -1507,4 +1513,4 @@ export {
     createVaultToken,
     updatePowerboardStatus,
     createPreCharge
-}
+};
