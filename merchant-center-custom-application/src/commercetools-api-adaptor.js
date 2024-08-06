@@ -63,6 +63,7 @@ class CommerceToolsAPIAdapter {
             const response = await fetch(apiUrl, {
                 headers: {
                     authorization: `Bearer ${accessToken}`,
+                    "x-auth-token" : this.env.AUTH_HEADER_VALUE
                 },
                 body: body ? JSON.stringify(body) : null,
                 method: method,

@@ -29,6 +29,9 @@ deployAs:
           description: Sandbox api url
           default: 'https://api.preproduction.powerboard.commbank.com.au'
           required: true
+        - key: AUTH_HEADER_VALUE
+          description: Authentication header value
+          required: true
   - name: extension
     applicationType: service
     endpoint: /
@@ -39,8 +42,10 @@ deployAs:
       securedConfiguration:
         - key: POWERBOARD_INTEGRATION_CONFIG
           description: Escaped JSON object
+          required: true
         - key: AUTH_HEADER_VALUE
           description: Escaped JSON object
+          required: true
   - name: notification
     applicationType: service
     endpoint: /
@@ -50,5 +55,9 @@ deployAs:
       securedConfiguration:
         - key: POWERBOARD_INTEGRATION_CONFIG
           description: Escaped JSON object
+          required: true
+        - key: AUTH_HEADER_VALUE
+          description: Authentication header value
+          required: true
       
   
