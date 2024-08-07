@@ -9,7 +9,6 @@ function hasValidAuthorizationHeader(authTokenString) {
   const credentialString = decodedAuthToken.split(':')
   const username = credentialString[0]
   const password = credentialString[1]
-
   return (
       ctpConfig.clientId === username &&
       ctpConfig.clientSecret === password

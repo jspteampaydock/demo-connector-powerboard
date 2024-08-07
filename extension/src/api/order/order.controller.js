@@ -17,10 +17,10 @@ async function processRequest(request, response) {
     let orderObject = {};
     try {
         const authToken = getAuthorizationRequestHeader(request)
-        if (hasValidAuthorizationHeader(authToken)) {
-            return sendRequestIsUnauthorized();
+        if (!hasValidAuthorizationHeader(authToken)) {
+            return sendRequestIsUnauthorized(response);
         }
-        orderObject = await getOrderObject(request, orderObject);
+        orderObject = await getOrderObject(request);
         if (orderObject.orderNumber) {
             return sendEmptyActionsResponse(response);
         }
@@ -28,21 +28,23 @@ async function processRequest(request, response) {
     } catch (err) {
         return sendErrorResponse(response, orderObject, err);
     }
-    return null;
+    return null
 }
 
-function sendRequestIsUnauthorized() {
-    return httpUtils.sendResponse(
-        {
-            "statusCode": 400,
-            "message": errorMessages.UNAUTHORIZED_REQUEST,
-            "errors": [
+function sendRequestIsUnauthorized(response) {
+
+    return httpUtils.sendResponse({
+        response,
+        statusCode: 400,
+        data: {
+            errors: [
                 {
-                    "code": "Unauthorized",
-                    "message": errorMessages.UNAUTHORIZED_REQUEST,
-                }
-            ]
-        })
+                    code: 'Unauthorized',
+                    message: errorMessages.UNAUTHORIZED_REQUEST,
+                },
+            ],
+        },
+    });
 }
 
 function sendInvalidMethodResponse(response) {
@@ -61,6 +63,7 @@ function sendInvalidMethodResponse(response) {
 }
 
 function sendEmptyActionsResponse(response) {
+    console.log(123);
     return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}});
 }
 
