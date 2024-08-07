@@ -63,7 +63,6 @@ function sendInvalidMethodResponse(response) {
 }
 
 function sendEmptyActionsResponse(response) {
-    console.log(123);
     return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}});
 }
 
