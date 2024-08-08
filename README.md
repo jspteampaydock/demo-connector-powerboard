@@ -4,7 +4,9 @@
 
 The Powerboard Payment Connector allows seamless integration between your commercetools platform and Powerboard, enhancing your payment management processes.  This repository contains three primary modules:
 
-![Live Connection](docs/powerboard-connector-diagram.png)
+
+![Live Connection](docs/diagram-powerboard-connector.png)
+
 
 ### Extension Module
 Acts as middleware to connect commercetools with Powerboard. It triggers on payment creation and updates within commercetools to ensure efficient event handling by Powerboard.
