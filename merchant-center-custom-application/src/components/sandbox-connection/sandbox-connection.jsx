@@ -7,19 +7,15 @@ import SecondaryButton from '@commercetools-uikit/secondary-button';
 import TextField from '@commercetools-uikit/text-field';
 import PasswordField from '@commercetools-uikit/password-field';
 import SelectField from '@commercetools-uikit/select-field';
-import AsyncSelectField from '@commercetools-uikit/async-select-field';
 import CollapsiblePanel from '@commercetools-uikit/collapsible-panel';
 import Constraints from '@commercetools-uikit/constraints';
-import Spacings from '@commercetools-uikit/spacings';
 import messages from './messages';
 import styles from './sandbox-connection.module.css';
 import './sandbox-connection.css';
 import React, { useState, useEffect } from 'react';
 import { ContentNotification } from '@commercetools-uikit/notifications';
-import PulseLoader from 'react-spinners/PulseLoader';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';
-import ValidationPowerboardData from '../../validation-powerboard-data';
-import {INITIAL_LIVE_CONNECTION_FORM, INITIAL_SANDBOX_CONNECTION_FORM} from '../../constants';
+import { INITIAL_SANDBOX_CONNECTION_FORM } from '../../constants';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
 
 const SandboxConnectionForm = () => {
@@ -108,22 +104,6 @@ const SandboxConnectionForm = () => {
     { value: 'Customer without Gateway ID', label: 'Customer without Gateway ID' },
   ];
 
-  const bank_accounts_use_on_checkout_options = [
-    { value: 'Yes', label: 'Yes' },
-    { value: 'No', label: 'No' },
-  ];
-
-  const bank_accounts_bank_account_save_options = [
-    { value: 'Enable', label: 'Enable' },
-    { value: 'Disable', label: 'Disable' },
-  ];
-
-  const bank_accounts_bank_method_save_options = [
-    { value: 'Vault token', label: 'Vault token' },
-    { value: 'Customer with Gateway ID', label: 'Customer with Gateway ID' },
-    { value: 'Customer without Gateway ID', label: 'Customer without Gateway ID' },
-  ];
-
   const wallets_apple_pay_use_on_checkout_options = [
     { value: 'Yes', label: 'Yes' },
     { value: 'No', label: 'No' },
@@ -170,21 +150,6 @@ const SandboxConnectionForm = () => {
   ];
 
   const wallets_paypal_smart_button_pay_later_options = [
-    { value: 'Disable', label: 'Disable' },
-    { value: 'Enable', label: 'Enable' },
-  ];
-
-  const wallets_afterpay_v2_use_on_checkout_options = [
-    { value: 'Yes', label: 'Yes' },
-    { value: 'No', label: 'No' },
-  ];
-
-  const wallets_afterpay_v2_fraud_options = [
-    { value: 'Disable', label: 'Disable' },
-    { value: 'Enable', label: 'Enable' },
-  ];
-
-  const wallets_afterpay_v2_direct_charge_options = [
     { value: 'Disable', label: 'Disable' },
     { value: 'Enable', label: 'Enable' },
   ];
@@ -610,67 +575,6 @@ const SandboxConnectionForm = () => {
           </Constraints.Horizontal>
         </CollapsiblePanel>
 
-        {/*
-                <CollapsiblePanel header="Bank accounts" isDefaultClosed={true} className="collapsible-panel hide">
-                    <Constraints.Horizontal max={'scale'}>
-                        <Spacings.Stack scale="xl">
-
-                            <SelectField
-                                name="bank_accounts_use_on_checkout"
-                                title={intl.formatMessage(messages.bankAccountsCheckoutTitle)}
-                                description={intl.formatMessage(messages.bankAccountsCheckoutDesc)}
-                                isMulti={false}
-                                value={formik.values.bank_accounts_use_on_checkout}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                options={bank_accounts_use_on_checkout_options}
-                                isSearchable={false}
-                                isClearable={false}
-                            />
-
-                            <TextField
-                                name="bank_accounts_gateway_id"
-                                title={intl.formatMessage(messages.banksAccountGatewayId)}
-                                value={formik.values.bank_accounts_gateway_id}
-                                touched={formik.touched.bank_accounts_gateway_id}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                isRequired={false}
-                                errors={formik.errors.bank_accounts_gateway_id}
-                            />
-
-                            <SelectField
-                                name="bank_accounts_bank_account_save"
-                                title={intl.formatMessage(messages.banksAccountSaveTitle)}
-                                description={intl.formatMessage(messages.banksAccountSaveDesc)}
-                                isMulti={false}
-                                value={formik.values.bank_accounts_bank_account_save}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                options={bank_accounts_bank_account_save_options}
-                                isSearchable={false}
-                                isClearable={false}
-                            />
-
-                            {formik.values.bank_accounts_bank_account_save !== 'Disable' && (
-                                <SelectField
-                                    name="bank_accounts_bank_method_save"
-                                    title={intl.formatMessage(messages.banksAccountSaveMethodTitle)}
-                                    isMulti={false}
-                                    value={formik.values.bank_accounts_bank_method_save}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    options={bank_accounts_bank_method_save_options}
-                                    isSearchable={false}
-                                    isClearable={false}
-                                />
-                            )}
-
-                        </Spacings.Stack>
-                    </Constraints.Horizontal>
-                </CollapsiblePanel>
-*/}
-
         <CollapsiblePanel header="Wallets" isDefaultClosed={true} className="collapsible-panel">
           <Constraints.Horizontal max={'scale'}>
             <Spacings.Stack scale="xl">
@@ -897,77 +801,6 @@ const SandboxConnectionForm = () => {
                   </Spacings.Stack>
                 </Constraints.Horizontal>
               </CollapsiblePanel>
-              {/*
-              <CollapsiblePanel header="Afterpay v2" isDefaultClosed={true} className="collapsible-panel">
-                <Constraints.Horizontal max={'scale'}>
-                  <Spacings.Stack scale="xl">
-
-                    <SelectField
-                      name="wallets_afterpay_v2_use_on_checkout"
-                      title={intl.formatMessage(messages.walletAfterpayCheckoutTitle)}
-                      description={intl.formatMessage(messages.walletAfterpayCheckoutDesc)}
-                      isMulti={false}
-                      value={formik.values.wallets_afterpay_v2_use_on_checkout}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      options={wallets_afterpay_v2_use_on_checkout_options}
-                      isSearchable={false}
-                      isClearable={false}
-                    />
-
-                    <TextField
-                      name="wallets_afterpay_v2_gateway_id"
-                      title={intl.formatMessage(messages.walletAfterpayGatewayId)}
-                      value={formik.values.wallets_afterpay_v2_gateway_id}
-                      touched={formik.touched.wallets_afterpay_v2_gateway_id}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      isRequired={false}
-                      errors={formik.errors.wallets_afterpay_v2_gateway_id}
-                    />
-
-                    <SelectField
-                      name="wallets_afterpay_v2_fraud"
-                      title={intl.formatMessage(messages.walletAfterpaySelectFraud)}
-                      isMulti={false}
-                      value={formik.values.wallets_afterpay_v2_fraud}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      options={wallets_afterpay_v2_fraud_options}
-                      isSearchable={false}
-                      isClearable={false}
-                    />
-
-                    {formik.values.wallets_afterpay_v2_fraud !== 'Disable' && (
-                      <TextField
-                        name="wallets_afterpay_v2_fraud_service_id"
-                        title={intl.formatMessage(messages.walletAfterpayFraudService)}
-                        value={formik.values.wallets_afterpay_v2_fraud_service_id}
-                        touched={formik.touched.wallets_afterpay_v2_fraud_service_id}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        isRequired={false}
-                        errors={formik.errors.wallets_afterpay_v2_fraud_service_id}
-                      />
-                    )}
-
-                    <SelectField
-                      name="wallets_afterpay_v2_direct_charge"
-                      title={intl.formatMessage(messages.walletAfterpaySelectDirectChargeTitle)}
-                      description={intl.formatMessage(messages.walletAfterpaySelectDirectChargeDescription)}
-                      isMulti={false}
-                      value={formik.values.wallets_afterpay_v2_direct_charge}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      options={wallets_afterpay_v2_direct_charge_options}
-                      isSearchable={false}
-                      isClearable={false}
-                    />
-
-                  </Spacings.Stack>
-                </Constraints.Horizontal>
-              </CollapsiblePanel>
-*/}
             </Spacings.Stack>
           </Constraints.Horizontal>
         </CollapsiblePanel>

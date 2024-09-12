@@ -1,5 +1,3 @@
-export const entryPointUriPath = typeof window === 'undefined' ? process.env.ENTRY_POINT_URI_PATH : window.app.entryPointUriPath;
-
 export const INITIAL_LIVE_CONNECTION_FORM = {
   credentials_type: 'credentials',
   credentials_public_key: '',

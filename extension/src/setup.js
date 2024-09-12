@@ -33,11 +33,7 @@ async function cleanupExtensionResources() {
         const apiExtensionTemplate = await utils.readAndParseJsonFile(
             'resources/api-extension.json',
         )
-        const apiExtensionOrderTemplate = await utils.readAndParseJsonFile(
-            'resources/api-order-extension.json',
-        )
         await utils.deleteElementByKeyIfExists(ctpClient, apiExtensionTemplate.key)
-        await utils.deleteElementByKeyIfExists(ctpClient, apiExtensionOrderTemplate.key)
     } catch (err) {
         throw Error(`Error: ${JSON.stringify(serializeError(err))}`)
     }
