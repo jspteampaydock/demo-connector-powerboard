@@ -52,7 +52,7 @@ async function makePayment(makePaymentRequestObj) {
         if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
             customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
         }
-        response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType);
+        response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType, paymentSource);
         if (response) {
             status = response.status;
             message = response.message;
@@ -73,7 +73,7 @@ async function makePayment(makePaymentRequestObj) {
     }
 }
 
-async function handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType) {
+async function handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType, paymentSource) {
     try {
         switch (paymentType) {
             case 'card':
@@ -95,6 +95,7 @@ async function handlePaymentType(input, configurations, vaultToken, customerId, 
                     input,
                     amount,
                     currency,
+					paymentSource,
                     paymentType
                 });
             case 'PayPal Smart':

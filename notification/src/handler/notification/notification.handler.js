@@ -184,7 +184,9 @@ async function processFraudNotificationComplete(event, payment, notification, ct
     }
 
     if (cacheData._3ds) {
-        const attachResponse = await cardFraudAttach({fraudChargeId, updatedChargeId})
+         const attachResponse =  await createCharge({
+            fraud_charge_id: fraudChargeId
+        }, {action: 'standalone-fraud-attach', updatedChargeId}, true)
         if (attachResponse?.error) {
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
@@ -520,15 +522,6 @@ async function getPaymentByMerchantReference(
         throw new VError(err, errMsg)
     }
 }
-
-async function cardFraudAttach({fraudChargeId, chargeId}) {
-    const request = {
-        fraud_charge_id: fraudChargeId
-    }
-
-    return await createCharge(request, {action: 'standalone-fraud-attach', chargeId}, true)
-}
-
 
 function getNewStatuses(notification) {
     let {status} = notification
