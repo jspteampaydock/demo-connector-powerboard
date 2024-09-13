@@ -105,7 +105,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
         result.message = error
     }
 
-    await addPowerboardLog({
+    await addPowerboardLog(currentPayment.id, currentVersion,{
         powerboardChargeID: chargeId,
         operation,
         status: result.status,
@@ -174,7 +174,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
         result.status = 'UnfulfilledCondition'
         result.message = `Can't charge.${errorMessageToString(response)}`
 
-        await addPowerboardLog({
+        await addPowerboardLog(payment.id, payment.version, {
             powerboardChargeID: updatedChargeId,
             operation: 'Charge',
             status: result.status,
@@ -191,7 +191,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
 
-            await addPowerboardLog({
+            await addPowerboardLog(payment.id, payment.version, {
                 powerboardChargeID: updatedChargeId,
                 operation: 'Fraud Attach',
                 status: result.status,
@@ -245,7 +245,7 @@ async function handleFraudNotification(response, updatedChargeId, ctpClient, pay
 
         result.status = 'Success'
 
-        await addPowerboardLog({
+        await addPowerboardLog(currentPayment.id, currentVersion, {
             powerboardChargeID: chargeId,
             operation,
             status: result.status,
@@ -454,7 +454,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             result.message = error
         }
     }
-    await addPowerboardLog({
+    await addPowerboardLog(payment.id, currentVersion, {
         powerboardChargeID: chargeId,
         operation: powerboardStatus,
         status: result.status,
