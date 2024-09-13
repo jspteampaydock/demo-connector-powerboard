@@ -36,18 +36,16 @@ cd powerboard-e-commerce-commercetools-payment-connector
 Navigate to the extension directory and set up the following environment variables:
 
 ```
-echo 'POWERBOARD_INTEGRATION_CONFIG={
-   "clientId":"[YOUR_CLIENT_ID]",
-   "clientSecret":"[YOUR_CLIENT_SECRET]",
-   "projectKey":"[YOUR_PROJECT_KEY]",
-   "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
-   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
-   "powerboardLiveUrl": "[API_POWERBOARD_URL]",
-   "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]",
-   "powerboardWidgetTypeSdk": "[WIDGET_TYPE_SDK]",//("staging_cba", "preproduction_cba")
-   "powerboardWidgetUrl": "[WIDGET_URL]",
-   "powerboardWidgetTestUrl": "[WIDGET_TEST_URL]"
+echo 'COMMERCETOOLS_CLIENT_ID = [COMMERCETOOLS_CLIENT_ID]
+   COMMERCETOOLS_CLIENT_SECRET = [COMMERCETOOLS_CLIENT_SECRET]
+   COMMERCETOOLS_PROJECT_KEY = [COMMERCETOOLS_PROJECT_KEY]
+   COMMERCETOOLS_API_URL = [COMMERCETOOLS_API_URL]
+   COMMERCETOOLS_AUTH_URL = [COMMERCETOOLS_AUTH_URL]
+   POWERBOARD_API_LIVE_URL = [POWERBOARD_API_LIVE_URL]
+   POWERBOARD_API_SANDBOX_URL = [POWERBOARD_API_SANDBOX_URL]
+   POWERBOARD_WIDGET_TYPE_SDK = [POWERBOARD_WIDGET_TYPE_SDK]
+   POWERBOARD_WIDGET_URL = [POWERBOARD_WIDGET_URL]
+   POWERBOARD_WIDGET_TEST_URLL = [POWERBOARD_WIDGET_TEST_URLL]
 }' > ./extension/.env
 ```
 
@@ -63,10 +61,8 @@ Build the following docker images:
 
 5. Launch the Docker container with the following command:
 
-- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-powerboard-payment-connector-extention`
+- `docker run -e COMMERCETOOLS_CLIENT_ID=**** COMMERCETOOLS_CLIENT_SECRET=**** COMMERCETOOLS_PROJECT_KEY=**** COMMERCETOOLS_API_URL=**** COMMERCETOOLS_AUTH_URL=*** POWERBOARD_API_LIVE_URL=**** POWERBOARD_API_SANDBOX_URL=**** POWERBOARD_WIDGET_TYPE_SDK=**** POWERBOARD_WIDGET_URL=**** POWERBOARD_WIDGET_TEST_URLL=**** -p 8082:8082 commercetools-payment-connector-extention`
 
-
-6. Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string.
 ###
 The Extension Module is accessible at: http://your_domain:8082.
 
@@ -94,18 +90,16 @@ cd powerboard-e-commerce-commercetools-payment-connector
 Navigate to the extension directory and set up the environment variables.
 
 ```
-echo 'POWERBOARD_INTEGRATION_CONFIG={
-   "clientId":"[YOUR_CLIENT_ID]",
-   "clientSecret":"[YOUR_CLIENT_SECRET]",
-   "projectKey":"[YOUR_PROJECT_KEY]",
-   "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
-   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
-   "powerboardLiveUrl": "[API_POWERBOARD_URL]",
-   "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "extensionBaseUrl": "[EXTENSION_BASE_URL]",
-   "powerboardWidgetTypeSdk": "[WIDGET_TYPE_SDK]",//("staging_cba", "preproduction_cba")
-   "powerboardWidgetUrl": "[WIDGET_URL]",
-   "powerboardWidgetTestUrl": "[WIDGET_TEST_URL]"
+echo 'COMMERCETOOLS_CLIENT_ID = [COMMERCETOOLS_CLIENT_ID]
+   COMMERCETOOLS_CLIENT_SECRET = [COMMERCETOOLS_CLIENT_SECRET]
+   COMMERCETOOLS_PROJECT_KEY = [COMMERCETOOLS_PROJECT_KEY]
+   COMMERCETOOLS_API_URL = [COMMERCETOOLS_API_URL]
+   COMMERCETOOLS_AUTH_URL = [COMMERCETOOLS_AUTH_URL]
+   POWERBOARD_API_LIVE_URL = [POWERBOARD_API_LIVE_URL]
+   POWERBOARD_API_SANDBOX_URL = [POWERBOARD_API_SANDBOX_URL]
+   POWERBOARD_WIDGET_TYPE_SDK = [POWERBOARD_WIDGET_TYPE_SDK]
+   POWERBOARD_WIDGET_URL = [POWERBOARD_WIDGET_URL]
+   POWERBOARD_WIDGET_TEST_URLL = [POWERBOARD_WIDGET_TEST_URLL]
 }' > ./extension/.env
 ```
 
@@ -114,7 +108,6 @@ Replace the placeholder values with your Commercetools API credentials.
 
 4. Build the docker images and run the application.
 
-* Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
 
 * Launch docker-compose. The docker images will be built automatically:
 

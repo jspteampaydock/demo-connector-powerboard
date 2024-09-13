@@ -7,7 +7,7 @@ let ctpClient;
 
 
 function getNotificationUrl() {
-  return  process.env.CONNECT_SERVICE_URL  ?? config.notificationBaseUrl;
+  return  process.env.CONNECT_SERVICE_URL;
 }
 
 async function getCtpClient() {

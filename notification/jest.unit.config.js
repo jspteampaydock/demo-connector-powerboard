@@ -7,7 +7,7 @@ export default {
         [
             '//node_modules'
         ],
-    displayName: 'Tests Javascript Application - Paydock Extension',
+    displayName: 'Tests Javascript Application - Powerboard Extension',
     moduleDirectories: ['node_modules', 'src'],
     testMatch: ['**/tests/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
     testEnvironment: 'node',

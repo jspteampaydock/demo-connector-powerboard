@@ -1,6 +1,6 @@
-# Paydock Commercetools Custom Application
+# Powerboard Commercetools Custom Application
 
-This guide provides instructions on how to install and set up the "Paydock" custom application for Commercetools.
+This guide provides instructions on how to install and set up the "Powerboard" custom application for Commercetools.
 
 
 

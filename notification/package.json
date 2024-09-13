@@ -32,8 +32,8 @@
     "url": "git+https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector"
   },
   "author": {
-    "name": "commercetools Professional Services",
-    "email": "ps-dev@commercetools.com"
+    "name": "Powerboard",
+    "email": "dev@paydock.com"
   },
   "engines": {
     "node": ">=18"
