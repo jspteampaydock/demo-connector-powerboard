@@ -7,12 +7,22 @@ const request = require('supertest');
 jest.mock('../../src/api/payment/payment.controller.js');
 jest.mock('../../src/config/config-loader.js', () => {
     const originalModule = jest.requireActual('../../src/config/config-loader.js');
-    const loaderConfigResult = require('../../test-data/extentionConfig.json')
+    const loaderConfigResult = jest.requireActual('../../test-data/extentionConfig.json')
 
     return {
         __esModule: true,
         ...originalModule,
         loadConfig: jest.fn(() => loaderConfigResult),
+    };
+});
+jest.mock('@commercetools-backend/loggers', () => {
+    return {
+        createApplicationLogger: jest.fn(() => ({
+            info: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+        })),
     };
 });
 describe('Uint::Server::', () => {
@@ -32,7 +42,7 @@ describe('Uint::Server::', () => {
         }));
 
         return request(server)
-            .post('/')
+            .post('/extension')
             .send({test: 'test'})
             .expect(500)
     })

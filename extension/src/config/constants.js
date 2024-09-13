@@ -19,8 +19,8 @@ export default {
     CTP_APP_INFO: {
         libraryName: "commercetools-powerboard",
         libraryVersion: "1.0.0",
-        contactUrl: "https://paydock.com/",
-        contactEmail: "accounts@paydock.com",
+        contactUrl: "https://powerboard.com/",
+        contactEmail: "accounts@powerboard.com",
     },
     CTP_INTERACTION_PAYMENT_EXTENSION_REQUEST: 'PaymentExtensionRequest',
     CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE: 'PaymentExtensionResponse',

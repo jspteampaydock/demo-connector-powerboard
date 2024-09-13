@@ -1,14 +1,16 @@
 import {
   initPaymentCustomType,
   initCustomerVaultTokens,
-} from './init-custom-type.js'
-import { initApiExtensions } from './init-api-extensions.js'
+  initPaymentInteractionType
+} from './custom-type.js'
+import { initApiExtensions } from './api-extensions.js'
 
 function initCustomTypes(ctpClient, ctpProjectKey) {
 
   return Promise.all([
     initPaymentCustomType(ctpClient, ctpProjectKey),
     initCustomerVaultTokens(ctpClient, ctpProjectKey),
+    initPaymentInteractionType(ctpClient, ctpProjectKey),
   ])
 }
 
@@ -29,4 +31,4 @@ function initResources(
   ])
 }
 
-export { initResources}
+export { initResources }

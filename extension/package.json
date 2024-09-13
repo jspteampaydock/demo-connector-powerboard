@@ -21,7 +21,6 @@
     "zip-azure-function": "cp extension-trigger/index.azureFunction.js extension-trigger/index.js && npm ci --production && zip -r extension-module.zip . && rm extension-trigger/index.js",
     "extension:post-deploy": "run-func ./src/post-deployment.js postDeployment",
     "extension:pre-undeploy": "run-func ./src/pre-undeployment.js preUndeployment"
-
   },
   "keywords": [
     "Powerboard",

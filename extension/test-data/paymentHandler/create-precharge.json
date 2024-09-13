@@ -5,7 +5,7 @@
     "email": "testCustomerEmail@awesome-domain.com",
     "phone": "+123456789012",
     "payment_source": {
-      "gateway_id": null,
+      "gateway_id": "awesomeGatewayId",
       "address_line1": "awesomeStreet1",
       "address_city": "AwesomeCity",
       "address_state": "ACT",
@@ -14,7 +14,7 @@
     }
   },
   "amount": 123.45,
-  "reference": null,
+  "reference": "aeb87e55-5b90-4866-9677-38b9c7b430e9",
   "currency": "AUD",
   "country": "AU",
   "meta": {

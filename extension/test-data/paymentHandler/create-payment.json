@@ -5,7 +5,7 @@
   },
   "custom": {
     "fields": {
-      "CommercetoolsProjectKey": null,
+      "CommercetoolsProjectKey": "test-commercetools-project-key",
       "PaymentExtensionRequest": "{\"action\":\"getPaymentMethodsRequest\",\"request\":{}}"
     },
     "type": {
@@ -17,7 +17,7 @@
     "paymentInterface": "Mock",
     "method": "powerboard-pay",
     "name": {
-      "en": "Power Board"
+      "en": "Powerboard"
     }
   },
   "transactions": [

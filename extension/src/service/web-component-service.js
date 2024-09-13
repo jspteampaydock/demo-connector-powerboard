@@ -1,19 +1,19 @@
-import fetch from 'node-fetch';
 import {serializeError} from 'serialize-error';
 import config from '../config/config.js';
 import c from '../config/constants.js';
 import httpUtils from "../utils.js";
 import ctp from "../ctp.js";
 import customObjectsUtils from "../utils/custom-objects-utils.js";
+import {callPowerboard} from './powerboard-api-service.js';
+import {updateOrderPaymentState} from './ct-api-service.js';
 
 const logger = httpUtils.getLogger();
 
-async function makePayment(makePaymentRequestObj) {
+async function makePayment(makePaymentRequestObj, paymentId) {
     try {
         const orderId = makePaymentRequestObj.orderId;
+        const paymentSource = makePaymentRequestObj.PowerboardTransactionId;
         const paymentType = makePaymentRequestObj.PowerboardPaymentType;
-        const amount = makePaymentRequestObj.amount.value;
-        const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
         const input = makePaymentRequestObj;
         const additionalInformation = input.AdditionalInfo ?? {};
         if (additionalInformation) {
@@ -52,7 +52,7 @@ async function makePayment(makePaymentRequestObj) {
         if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
             customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
         }
-        response = await handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType, paymentSource);
+        response = await handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentId);
         if (response) {
             status = response.status;
             message = response.message;
@@ -73,7 +73,10 @@ async function makePayment(makePaymentRequestObj) {
     }
 }
 
-async function handlePaymentType(input, configurations, vaultToken, customerId, amount, currency, paymentType, paymentSource) {
+async function handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentId) {
+    const configurations = await config.getPowerboardConfig('connection');
+    const amount = makePaymentRequestObj.amount.value;
+    const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
     try {
         switch (paymentType) {
             case 'card':
@@ -95,8 +98,9 @@ async function handlePaymentType(input, configurations, vaultToken, customerId, 
                     input,
                     amount,
                     currency,
-					paymentSource,
-                    paymentType
+                    paymentSource,
+                    paymentType,
+                    paymentId
                 });
             case 'PayPal Smart':
             case 'Google Pay':
@@ -109,7 +113,6 @@ async function handlePaymentType(input, configurations, vaultToken, customerId, 
                     chargeId: input.charge_id,
                 };
             default:
-                // Default case to handle unexpected or unknown payment types
                 return {
                     status: 'Error',
                     message: `Unknown payment type: ${paymentType}`,
@@ -336,64 +339,121 @@ async function cardFraud3DsCharge({
 }
 
 async function cardFraud3DsInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    try {
-        const payment_source = getAdditionalFields(input);
-        if (configurations.card_3ds_flow === 'With OTT') {
-            payment_source.amount = amount;
-        } else {
-            payment_source.vault_token = vaultToken;
-        }
+    const payment_source = getAdditionalFields(input);
+    if (configurations.card_3ds_flow === 'With OTT') {
+        payment_source.amount = amount;
+    } else {
+        payment_source.vault_token = vaultToken;
+    }
 
-        if (configurations.card_gateway_id) {
-            payment_source.gateway_id = configurations.card_gateway_id;
-        }
+    if (configurations.card_gateway_id) {
+        payment_source.gateway_id = configurations.card_gateway_id;
+    }
 
-        if (input.cvv) {
-            payment_source.card_ccv = input.cvv;
-        }
+    if (input.cvv) {
+        payment_source.card_ccv = input.cvv;
+    }
 
-        const fraudData = {};
-        fraudData.data = getAdditionalFields(input);
-        fraudData.data.amount = amount;
+    const fraudData = {};
+    fraudData.data = getAdditionalFields(input);
+    fraudData.data.amount = amount;
 
-        if (configurations.card_fraud_service_id) {
-            fraudData.service_id = configurations.card_fraud_service_id;
-        }
+    if (configurations.card_fraud_service_id) {
+        fraudData.service_id = configurations.card_fraud_service_id
+    }
 
-        const threeDsData = {
-            id: input.charge3dsId ?? ''
-        };
+    const threeDsData = {
+        id: input.charge3dsId ?? ''
+    }
 
-        if (configurations.card_3ds_service_id) {
-            threeDsData.service_id = configurations.card_3ds_service_id;
-        }
+    if (configurations.card_3ds_service_id) {
+        threeDsData.service_id = configurations.card_3ds_service_id
+    }
 
-        const isDirectCharge = configurations.card_direct_charge === 'Enable';
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
 
-        const request = {
-            amount,
-            reference: input.orderId ?? '',
-            currency,
-            customer: {
-                first_name: input.billing_first_name ?? '',
-                last_name: input.billing_last_name ?? '',
-                email: input.billing_email ?? '',
-                phone: input.billing_phone ?? '',
-                payment_source
-            },
-            _3ds: threeDsData,
-            fraud: fraudData,
-            capture: isDirectCharge,
-            authorization: !isDirectCharge
-        };
+    const request = {
+        amount,
+        reference: input.orderId ?? '',
+        currency,
+        customer: {
+            first_name: input.billing_first_name ?? '',
+            last_name: input.billing_last_name ?? '',
+            email: input.billing_email ?? '',
+            phone: input.billing_phone ?? '',
+            payment_source
+        },
+        _3ds: threeDsData,
+        fraud: fraudData,
+        capture: isDirectCharge,
+        authorization: !isDirectCharge
+    }
 
-        const result = await createCharge(request, {directCharge: isDirectCharge});
+    const result = await createCharge(request, {directCharge: isDirectCharge});
+    result.paydockStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    return result;
+}
 
-        result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
-        return result;
-    } catch (error) {
-        logger.error(`Error in cardFraud3DsInBuildCharge: ${JSON.stringify(serializeError(error))}`);
-        throw error;
+async function cardFraudInBuildCharge({configurations, input, amount, currency, vaultToken}) {
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+    const request = buildRequestcardFraudInBuildCharge(input, configurations, vaultToken, amount, currency)
+    const result = await createCharge(request, {directCharge: isDirectCharge});
+    if (result.status === 'Success') {
+        result.powerboardStatus = c.STATUS_TYPES.PENDING;
+    } else {
+        result.powerboardStatus = c.STATUS_TYPES.FAILED;
+    }
+
+    return result;
+}
+
+function buildRequestcardFraudInBuildCharge(input, configurations, vaultToken, amount, currency) {
+    const payment_source = getAdditionalFields(input);
+    payment_source.vault_token = vaultToken;
+    if (configurations.card_gateway_id) {
+        payment_source.gateway_id = configurations.card_gateway_id;
+    }
+    if (input.cvv) {
+        payment_source.card_ccv = input.cvv;
+    }
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+    const billingFirstName = input.billing_first_name ?? '';
+    const billingLastName = input.billing_last_name ?? '';
+    const billingEmail = input.billing_email ?? '';
+    const billingPhone = input.billing_phone ?? '';
+    return {
+        amount,
+        reference: input.orderId ?? '',
+        currency,
+        customer: {
+            first_name: billingFirstName,
+            last_name: billingLastName,
+            email: billingEmail,
+            phone: billingPhone,
+            payment_source
+        },
+        fraud: {
+            service_id: configurations.card_fraud_service_id ?? '',
+            data: {
+                transaction: {
+                    billing: {
+                        customerEmailAddress: billingEmail,
+                        shippingFirstName: billingFirstName,
+                        shippingLastName: billingLastName,
+                        shippingAddress1: input.billing_address_1 ?? '',
+                        shippingAddress2: input.billing_address_2 ?? (input.billing_address_1 ?? ''),
+                        shippingCity: input.billing_city ?? '',
+                        shippingState: input.billing_state ?? '',
+                        shippingPostcode: input.billing_postcode ?? '',
+                        shippingCountry: input.billing_country ?? '',
+                        shippingPhone: billingPhone,
+                        shippingEmail: billingEmail,
+                    }
+                }
+            }
+        },
+        capture: isDirectCharge,
+        authorization: !isDirectCharge
     }
 }
 
@@ -750,74 +810,6 @@ async function cardFraudCharge({
         return result;
     } catch (error) {
         logger.error(`Error in cardFraudCharge: ${JSON.stringify(serializeError(error))}`);
-        throw error;
-    }
-}
-
-async function cardFraudInBuildCharge({configurations, input, amount, currency, vaultToken}) {
-    try {
-        const payment_source = getAdditionalFields(input);
-        payment_source.vault_token = vaultToken;
-
-        if (configurations.card_gateway_id) {
-            payment_source.gateway_id = configurations.card_gateway_id;
-        }
-
-        if (input.cvv) {
-            payment_source.card_ccv = input.cvv;
-        }
-
-        const isDirectCharge = configurations.card_direct_charge === 'Enable';
-
-        const billingFirstName = input.billing_first_name ?? '';
-        const billingLastName = input.billing_last_name ?? '';
-        const billingEmail = input.billing_email ?? '';
-        const billingPhone = input.billing_phone ?? '';
-
-        const request = {
-            amount,
-            reference: input.orderId ?? '',
-            currency,
-            customer: {
-                first_name: billingFirstName,
-                last_name: billingLastName,
-                email: billingEmail,
-                phone: billingPhone,
-                payment_source
-            },
-            fraud: {
-                service_id: configurations.card_fraud_service_id ?? '',
-                data: {
-                    transaction: {
-                        billing: {
-                            customerEmailAddress: billingEmail,
-                            shippingFirstName: billingFirstName,
-                            shippingLastName: billingLastName,
-                            shippingAddress1: input.billing_address_1 ?? '',
-                            shippingAddress2: input.billing_address_2 ?? (input.billing_address_1 ?? ''),
-                            shippingCity: input.billing_city ?? '',
-                            shippingState: input.billing_state ?? '',
-                            shippingPostcode: input.billing_postcode ?? '',
-                            shippingCountry: input.billing_country ?? '',
-                            shippingPhone: billingPhone,
-                            shippingEmail: billingEmail,
-                        }
-                    }
-                }
-            },
-            capture: isDirectCharge,
-            authorization: !isDirectCharge
-        };
-
-        const result = await createCharge(request, {directCharge: isDirectCharge});
-        if (result.status === 'Success') {
-            result.powerboardStatus = c.STATUS_TYPES.PENDING;
-        } else {
-            result.powerboardStatus = c.STATUS_TYPES.FAILED;
-        }
-        return result;
-    } catch (error) {
-        logger.error(`Error in cardFraudInBuildCharge: ${JSON.stringify(serializeError(error))}`);
         throw error;
     }
 }
@@ -1288,7 +1280,6 @@ async function createCharge(data, params = {}, returnObject = false) {
         if (returnObject) {
             return response;
         }
-
         if (response.status === 201) {
             return {
                 status: "Success",
@@ -1328,83 +1319,6 @@ function getAdditionalFields(input) {
     return additionalFields;
 }
 
-async function callPowerboard(url, data, method) {
-    let returnedRequest;
-    let returnedResponse;
-    url = await generatePowerboardUrlAction(url);
-    try {
-        const {response, request} = await fetchAsyncPowerboard(url, data, method);
-        returnedRequest = request;
-        returnedResponse = response;
-    } catch (err) {
-        returnedRequest = {body: JSON.stringify(data)};
-        returnedResponse = serializeError(err);
-    }
-
-    return {request: returnedRequest, response: returnedResponse};
-}
-
-async function fetchAsyncPowerboard(
-    url,
-    requestObj,
-    method
-) {
-    let response;
-    let responseBody;
-    let responseBodyInText;
-    const request = await buildRequestPowerboard(requestObj, method);
-
-    try {
-        response = await fetch(url, request);
-        responseBodyInText = await response.text();
-        responseBody = responseBodyInText ? JSON.parse(responseBodyInText) : '';
-    } catch (err) {
-        if (response)
-            throw new Error(
-                `Unable to receive non-JSON format resposne from Powerboard API : ${responseBodyInText}`,
-            );
-        else throw err;
-    } finally {
-        if (responseBody.additionalData) {
-            delete responseBody.additionalData;
-        }
-    }
-    return {response: responseBody, request};
-}
-
-async function generatePowerboardUrlAction(url) {
-    const apiUrl = await config.getPowerboardApiUrl();
-    return apiUrl + url;
-}
-
-async function buildRequestPowerboard(requestObj, methodOverride) {
-    const powerboardCredentials = await config.getPowerboardConfig('connection');
-    let requestHeaders = {};
-
-    if (powerboardCredentials.credentials_type === 'credentials') {
-        requestHeaders = {
-            'X-Commercetools-Meta': 'V1.0.0_commercetools',
-            'Content-Type': 'application/json',
-            'x-user-secret-key': powerboardCredentials.credentials_secret_key
-        };
-    } else {
-        requestHeaders = {
-            'X-Commercetools-Meta': 'V1.0.0_commercetools',
-            'Content-Type': 'application/json',
-            'x-access-token': powerboardCredentials.credentials_access_key
-        };
-    }
-
-    const request = {
-        method: methodOverride || 'POST',
-        headers: requestHeaders,
-    };
-    if (methodOverride !== 'GET') {
-        request.body = JSON.stringify(requestObj);
-    }
-    return request;
-}
-
 function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
     let powerboardStatus;
     if (paymentStatus === 'Success') {
@@ -1417,54 +1331,6 @@ function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
         powerboardStatus = c.STATUS_TYPES.FAILED;
     }
     return powerboardStatus;
-}
-
-async function updateOrderPaymentState(orderId, status) {
-    const ctpConfig = config.getExtensionConfig();
-    const ctpClient = await ctp.get(ctpConfig);
-    const paymentObject = await getPaymentByKey(ctpClient, orderId);
-    if (paymentObject) {
-        const updateData = [{
-            action: 'setCustomField',
-            name: 'PowerboardPaymentStatus',
-            value: status
-        }];
-
-        const updatedOrder = await updatePaymentByKey(ctpClient, paymentObject, updateData);
-        if (updatedOrder.statusCode === 200) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-async function getPaymentByKey(ctpClient, paymentKey) {
-    try {
-        const result = await ctpClient.fetchByKey(ctpClient.builder.payments, paymentKey);
-        return result.body;
-    } catch (err) {
-        if (err.statusCode === 404) return null;
-        const errMsg =
-            `Failed to fetch a payment` +
-            `Error: ${JSON.stringify(serializeError(err))}`;
-        logger.error(errMsg);
-        throw err;
-    }
-}
-
-async function updatePaymentByKey(ctpClient, paymentObject, updateData) {
-    try {
-        await ctpClient.update(
-            ctpClient.builder.payments,
-            paymentObject.id,
-            paymentObject.version,
-            updateData
-        );
-    } catch (err) {
-        logger.error(`Unexpected error on payment update with ID: ${paymentObject.id}. Failed actions: ${JSON.stringify(err)}`);
-        throw err;
-    }
 }
 
 async function getUserVaultTokens(user_id) {

@@ -5,13 +5,16 @@ let config
 let powerboardConfig;
 let ctpClient;
 
+function getExtensionUrl() {
+    return  process.env.CONNECT_SERVICE_URL;
+}
+
 function getModuleConfig() {
-    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? config.extensionBaseUrl;
     return {
         removeSensitiveData: true,
         port: config.port,
         logLevel: config.logLevel,
-        apiExtensionBaseUrl: extensionBaseUrl,
+        apiExtensionBaseUrl:  getExtensionUrl(),
         basicAuth: true,
         projectKey: config.projectKey,
         keepAliveTimeout: 30,

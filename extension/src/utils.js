@@ -1,11 +1,24 @@
-import bunyan from 'bunyan'
 import {serializeError} from 'serialize-error'
+import loggers  from '@commercetools-backend/loggers';
 import {fileURLToPath} from 'url'
 import path from 'path'
 import fs from 'node:fs/promises'
 import config from './config/config.js'
 
-let logger
+
+const { createApplicationLogger } = loggers;
+
+let loggerInstance;
+
+function getLogger() {
+    if (!loggerInstance) {
+        loggerInstance = createApplicationLogger({
+            name: 'ctp-powerboard-integration-extension',
+            level: config.getModuleConfig()?.logLevel || 'info',
+        });
+    }
+    return loggerInstance;
+}
 
 async function addPowerboardLog(data) {
     const logKey = `powerboard-log_${Date.now()}`;
@@ -40,16 +53,6 @@ function collectRequestData(request) {
 function sendResponse({response, statusCode = 200, headers, data}) {
     response.writeHead(statusCode, headers)
     response.end(JSON.stringify(data))
-}
-
-function getLogger() {
-    if (!logger)
-        logger = bunyan.createLogger({
-            name: 'ctp-powerboard-integration-extension',
-            stream: process.stderr,
-            level: config.getModuleConfig()?.logLevel || bunyan.INFO,
-        })
-    return logger
 }
 
 function handleUnexpectedPaymentError(paymentObj, err) {
