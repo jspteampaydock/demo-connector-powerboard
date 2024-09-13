@@ -56,8 +56,8 @@ async function execute(paymentObject) {
         response.message = "Merchant refunded money"
         message = `Refunded ${requestBodyJson.refundAmount}`
     }
-    await httpUtils.addPowerboardLog({
-        PowerboardChargeID: chargeId,
+    await httpUtils.addPowerboardLog(paymentObject.id, {
+        powerboardChargeID: chargeId,
         operation: newStatus,
         responseStatus,
         message

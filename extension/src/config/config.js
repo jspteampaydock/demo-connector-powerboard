@@ -9,6 +9,16 @@ function getExtensionUrl() {
     return  process.env.CONNECT_SERVICE_URL;
 }
 
+function decrypt(data, clientSecret) {
+    const keyArrayLen = clientSecret.length;
+
+    return data.split("").map((dataElement, index) => {
+        const remainder = index % keyArrayLen;
+
+        return String.fromCharCode(dataElement.charCodeAt(0) / clientSecret.charCodeAt(remainder))
+    }).join("");
+}
+
 function getModuleConfig() {
     return {
         removeSensitiveData: true,
@@ -76,6 +86,15 @@ async function getPowerboardConfig(type = 'all', disableCache = false) {
                 powerboardConfig[element.key] = element.value;
             });
         }
+        ["live", "sandbox"].forEach((group) => [
+            "credentials_access_key",
+            "credentials_public_key",
+            "credentials_secret_key"
+        ].forEach((field) => {
+            if (paydockConfig[group]?.[field]) {
+                paydockConfig[group][field] = decrypt(paydockConfig[group][field], config.clientSecret)
+            }
+        }))
     }
     switch (type) {
         case 'connection':

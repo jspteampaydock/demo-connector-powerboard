@@ -20,19 +20,37 @@ function getLogger() {
     return loggerInstance;
 }
 
-async function addPowerboardLog(data) {
-    const logKey = `powerboard-log_${Date.now()}`;
-    const logObject = {
-        container: "powerboard-logs",
-        key: logKey,
-        value: data
-    };
+async function addPowerboardLog(paymentId, data) {
+    const date = new Date();
+    const ctpClient = await config.getCtpClient();
 
-    const ctpClient = await config.getCtpClient()
-    await ctpClient.create(
-        ctpClient.builder.customObjects,
-        JSON.stringify(logObject)
-    )
+    const updateActions = [
+        {
+            "action": "addInterfaceInteraction",
+            "type": {
+                "key": "powerboard-payment-log-interaction"
+            },
+            "fields": {
+                "createdAt": date.toISOString(),
+                "chargeId": data.powerboardChargeID,
+                "operation": data.operation,
+                "status": data.status,
+                "message": data.message
+            }
+        }
+    ];
+
+    const paymentData = await ctpClient.fetchById(ctpClient.builder.payments, paymentId);
+    const version = paymentData.body.version;
+
+    const result = await ctpClient.update(
+        ctpClient.builder.payments,
+        paymentId,
+        version,
+        updateActions
+    );
+
+    return result?.body?.version;
 }
 
 function collectRequestData(request) {
