@@ -90,7 +90,7 @@ class CommerceToolsAPIAdapter {
             version: data.version ?? 0,
             createdAt: data.createdAt ?? new Date().toString(),
             lastModifiedAt: new Date().toString(),
-            container: 'paydockConfigContainer',
+            container: 'powerboardConfigContainer',
             key: group ?? 'empty',
             value: data.value ?? null,
         };
@@ -135,7 +135,7 @@ class CommerceToolsAPIAdapter {
 
     async getConfigs(group) {
 
-        let data = await this.makeRequest('/custom-objects/paydockConfigContainer/' + group);
+        let data = await this.makeRequest('/custom-objects/powerboardConfigContainer/' + group);
 
         if (data.value.credentials_access_key) {
             data.value.credentials_access_key = await decrypt(data.value.credentials_access_key, this.clientSecret);
@@ -151,10 +151,10 @@ class CommerceToolsAPIAdapter {
     }
     async getLogs() {
         let logs = [];
-        let paydockLogs = await this.makeRequest('/payments/?&sort=createdAt+desc');
-        if (paydockLogs.results) {
-            paydockLogs.results.forEach((paydockLog) => {
-                paydockLog.interfaceInteractions.forEach((interactionLog) => {
+        let powerboardLogs = await this.makeRequest('/payments/?&sort=createdAt+desc');
+        if (powerboardLogs.results) {
+            powerboardLogs.results.forEach((powerboardLog) => {
+                powerboardLog.interfaceInteractions.forEach((interactionLog) => {
                     let message = typeof interactionLog.fields.message === 'string' ? interactionLog.fields.message : null;
                     logs.push({
                         operation_id: interactionLog.fields.chargeId,

@@ -77,7 +77,6 @@
     "@commercetools/sdk-middleware-queue": "3.0.0",
     "@commercetools/sdk-middleware-user-agent": "3.0.0",
     "@commercetools/sync-actions": "5.15.0",
-    "bunyan": "1.8.15",
     "dotenv": "^16.4.5",
     "lockfile-lint": "4.13.2",
     "lodash": "4.17.21",

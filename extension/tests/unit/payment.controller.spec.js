@@ -15,16 +15,14 @@ jest.mock('../../src/config/config-loader.js', () => {
         loadConfig: jest.fn(() => loaderConfigResult),
     };
 });
-jest.mock('@commercetools-backend/loggers', () => {
-    return {
-        createApplicationLogger: jest.fn(() => ({
-            info: jest.fn(),
-            error: jest.fn(),
-            warn: jest.fn(),
-            debug: jest.fn(),
-        })),
-    };
-});
+jest.mock('@commercetools-backend/loggers', () => ({
+    createApplicationLogger: jest.fn(() => ({
+        info: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        debug: jest.fn(),
+    })),
+}));
 
 describe('payment.controller.js', () => {
     let mockRequest;
@@ -82,80 +80,80 @@ describe('payment.controller.js', () => {
                 },
             });
         });
-/*
-        it('should handle payment processing and return actions', async () => {
-            const mockPaymentObject = {
-                custom: {
-                    fields: {},
-                },
-            };
-
-            // Мока повертає успішну відповідь з діями
-            paymentHandler.handlePayment.mockResolvedValue({actions: [{action: 'someAction'}]});
-            httpUtils.collectRequestData.mockResolvedValue(JSON.stringify({
-                resource: {
-                    obj: mockPaymentObject,
-                },
-            }));
-
-            await paymentController.processRequest(mockRequest, mockResponse);
-
-            expect(paymentHandler.handlePayment).toHaveBeenCalledWith(mockPaymentObject, undefined);
-            expect(httpUtils.sendResponse).toHaveBeenCalledWith({
-                response: mockResponse,
-                statusCode: 200,
-                data: {actions: [{action: 'someAction'}]},
-            });
-        });
-
-        it('should handle payment processing with extension request and return actions', async () => {
-            const mockPaymentObject = {
-                custom: {
-                    fields: {
-                        PaymentExtensionRequest: JSON.stringify({some: 'request'}),
-                    },
-                },
-            };
-
-            paymentHandler.handlePaymentByExtRequest.mockResolvedValue({actions: [{action: 'someAction'}]});
-            httpUtils.collectRequestData.mockResolvedValue(JSON.stringify({
-                resource: {
-                    obj: mockPaymentObject,
-                },
-            }));
-
-            await paymentController.processRequest(mockRequest, mockResponse);
-
-            expect(paymentHandler.handlePaymentByExtRequest).toHaveBeenCalledWith(mockPaymentObject, undefined);
-            expect(httpUtils.sendResponse).toHaveBeenCalledWith({
-                response: mockResponse,
-                statusCode: 200,
-                data: {actions: [{action: 'someAction'}]},
-            });
-        });
-
-        it('should return 400 and log error for unexpected errors', async () => {
-            const mockError = new Error('Test error');
-            httpUtils.collectRequestData.mockRejectedValue(mockError);
-
-            await paymentController.processRequest(mockRequest, mockResponse);
-
-            expect(httpUtils.sendResponse).toHaveBeenCalledWith({
-                response: mockResponse,
-                statusCode: 400,
-                data: expect.objectContaining({
-                    errors: [
-                        {
-                            code: expect.any(String),
-                            message: expect.any(String),
+        /*
+                it('should handle payment processing and return actions', async () => {
+                    const mockPaymentObject = {
+                        custom: {
+                            fields: {},
                         },
-                    ],
-                }),
-            });
+                    };
 
-            expect(httpUtils.getLogger().error).toHaveBeenCalledWith(
-                expect.stringContaining('Error during parsing CTP request')
-            );
-        }); */
+                    // Мока повертає успішну відповідь з діями
+                    paymentHandler.handlePayment.mockResolvedValue({actions: [{action: 'someAction'}]});
+                    httpUtils.collectRequestData.mockResolvedValue(JSON.stringify({
+                        resource: {
+                            obj: mockPaymentObject,
+                        },
+                    }));
+
+                    await paymentController.processRequest(mockRequest, mockResponse);
+
+                    expect(paymentHandler.handlePayment).toHaveBeenCalledWith(mockPaymentObject, undefined);
+                    expect(httpUtils.sendResponse).toHaveBeenCalledWith({
+                        response: mockResponse,
+                        statusCode: 200,
+                        data: {actions: [{action: 'someAction'}]},
+                    });
+                });
+
+                it('should handle payment processing with extension request and return actions', async () => {
+                    const mockPaymentObject = {
+                        custom: {
+                            fields: {
+                                PaymentExtensionRequest: JSON.stringify({some: 'request'}),
+                            },
+                        },
+                    };
+
+                    paymentHandler.handlePaymentByExtRequest.mockResolvedValue({actions: [{action: 'someAction'}]});
+                    httpUtils.collectRequestData.mockResolvedValue(JSON.stringify({
+                        resource: {
+                            obj: mockPaymentObject,
+                        },
+                    }));
+
+                    await paymentController.processRequest(mockRequest, mockResponse);
+
+                    expect(paymentHandler.handlePaymentByExtRequest).toHaveBeenCalledWith(mockPaymentObject, undefined);
+                    expect(httpUtils.sendResponse).toHaveBeenCalledWith({
+                        response: mockResponse,
+                        statusCode: 200,
+                        data: {actions: [{action: 'someAction'}]},
+                    });
+                });
+
+                it('should return 400 and log error for unexpected errors', async () => {
+                    const mockError = new Error('Test error');
+                    httpUtils.collectRequestData.mockRejectedValue(mockError);
+
+                    await paymentController.processRequest(mockRequest, mockResponse);
+
+                    expect(httpUtils.sendResponse).toHaveBeenCalledWith({
+                        response: mockResponse,
+                        statusCode: 400,
+                        data: expect.objectContaining({
+                            errors: [
+                                {
+                                    code: expect.any(String),
+                                    message: expect.any(String),
+                                },
+                            ],
+                        }),
+                    });
+
+                    expect(httpUtils.getLogger().error).toHaveBeenCalledWith(
+                        expect.stringContaining('Error during parsing CTP request')
+                    );
+                }); */
     });
 });

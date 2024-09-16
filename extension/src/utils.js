@@ -1,12 +1,11 @@
-import {serializeError} from 'serialize-error'
-import loggers  from '@commercetools-backend/loggers';
-import {fileURLToPath} from 'url'
-import path from 'path'
-import fs from 'node:fs/promises'
-import config from './config/config.js'
+import {serializeError} from 'serialize-error';
+import loggers from '@commercetools-backend/loggers';
+import {fileURLToPath} from 'url';
+import path from 'path';
+import fs from 'node:fs/promises';
+import config from './config/config.js';
 
-
-const { createApplicationLogger } = loggers;
+const {createApplicationLogger} = loggers;
 
 let loggerInstance;
 

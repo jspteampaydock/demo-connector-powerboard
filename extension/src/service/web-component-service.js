@@ -397,7 +397,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
