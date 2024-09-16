@@ -50,7 +50,7 @@ async function makePayment(makePaymentRequestObj, paymentId) {
         let customerId = null;
 
         if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
-            customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
+             customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
         }
         response = await handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentId);
         if (response) {
@@ -60,7 +60,7 @@ async function makePayment(makePaymentRequestObj, paymentId) {
             chargeId = response.chargeId;
         }
         await updateOrderPaymentState(orderId, powerboardStatus);
-        await httpUtils.addPowerboardLog({
+        await httpUtils.addPowerboardLog(paymentId, {
             powerboardChargeID: chargeId,
             operation: powerboardStatus,
             status,
@@ -1230,7 +1230,6 @@ async function getCustomerIdByVaultToken(user_id, vault_token) {
     let customerId = null;
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
-
         if (response?.body) {
             const userVaultTokens = response.body?.custom?.fields?.userVaultTokens ? JSON.parse(response.body?.custom?.fields?.userVaultTokens) : {};
 
@@ -1241,7 +1240,6 @@ async function getCustomerIdByVaultToken(user_id, vault_token) {
                 }
             }
         }
-
         return customerId;
     } catch (error) {
         logger.error(`Error in getCustomerIdByVaultToken: ${JSON.stringify(serializeError(error))}`);
@@ -1380,5 +1378,6 @@ export {
     makePayment,
     createVaultToken,
     updatePowerboardStatus,
-    createPreCharge
+    createPreCharge,
+    createCharge
 };

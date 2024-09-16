@@ -61,7 +61,7 @@ function createAddTransactionAction({
             state,
             interactionId,
             custom,
-        },
+        }
     }
 }
 
@@ -94,5 +94,6 @@ export {
     isValidMetadata,
     getPaymentKeyUpdateAction,
     createAddTransactionActionByResponse,
+    createAddTransactionAction,
     deleteCustomFieldAction
 }

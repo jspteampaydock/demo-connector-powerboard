@@ -1,6 +1,5 @@
 import {expect, jest} from '@jest/globals';
 import * as serviceModule from '../../src/service/web-component-service.js';
-import {setItem} from '../../src/utils/custom-objects-utils.js';
 import {updateOrderPaymentState} from '../../src/service/ct-api-service.js';
 import {callPowerboard} from '../../src/service/powerboard-api-service.js';
 import config from '../../src/config/config.js';
@@ -10,6 +9,9 @@ import ctp from '../../src/ctp.js';
 jest.mock('node-fetch');
 jest.mock('../../src/config/config.js');
 jest.mock('../../src/utils.js');
+
+const  customerObject = jest.requireActual('../../test-data/customer-object.json');
+let ctpClient;
 
 jest.mock('@commercetools-backend/loggers', () => {
     return {
@@ -73,6 +75,7 @@ describe('web-component-service.js', () => {
 
         mockCtpClient = {
             fetchByKey: jest.fn(),
+            fetchById: jest.fn(),
             update: jest.fn(),
             builder: {
                 payments: 'mockPaymentsPath', // Mocking the payments path
@@ -468,6 +471,13 @@ describe('web-component-service.js', () => {
         makePaymentRequestObj.CommerceToolsUserId = 'user-123';
         makePaymentRequestObj.PowerboardPaymentType = 'card';
 
+        mockCtpClient.fetchById.mockResolvedValue({
+            body: {
+                customerObject
+            }
+        });
+
+
         mockCtpClient.fetchByKey.mockResolvedValue({
             body: {
                 version: 1,
@@ -485,6 +495,7 @@ describe('web-component-service.js', () => {
                 resource: {data: {vault_token: 'vault-token-123', _id: 'charge-456'}},
             },
         });
+
 
         const response = await serviceModule.makePayment(makePaymentRequestObj);
 
@@ -751,7 +762,6 @@ describe('web-component-service.js', () => {
             },
         });
         updateOrderPaymentState.mockResolvedValue(true);
-        setItem.mockResolvedValue(null);
         const response = await serviceModule.makePayment(makePaymentRequestObj);
 
         expect(response.status).toBe('Success');
@@ -773,8 +783,6 @@ describe('web-component-service.js', () => {
         };
 
         config.getPowerboardConfig.mockResolvedValue(configurations);
-        setItem.mockResolvedValue(null);
-
         callPowerboard.mockResolvedValue({
             response: {
                 status: 201,
