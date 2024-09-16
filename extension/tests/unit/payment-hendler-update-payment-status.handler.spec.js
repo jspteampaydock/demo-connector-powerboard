@@ -47,7 +47,6 @@ describe('Unit::update-payment-status.handler::execute', () => {
         };
 
         paymentObject = {
-            id: 'order-123',
             custom: {
                 fields: {
                     PaymentExtensionRequest: JSON.stringify(paymentExtensionRequest),
@@ -85,7 +84,7 @@ describe('Unit::update-payment-status.handler::execute', () => {
             c.STATUS_TYPES.PAID
         );
 
-        expect(httpUtils.addPowerboardLog).toHaveBeenCalledWith('order-123', {
+        expect(httpUtils.addPowerboardLog).toHaveBeenCalledWith( {
             powerboardChargeID: 'charge-123',
             operation: c.STATUS_TYPES.PAID,  // This matches the expected status
             responseStatus: 'Success',
@@ -129,8 +128,8 @@ describe('Unit::update-payment-status.handler::execute', () => {
         const result = await handler.execute(paymentObject);
 
         expect(ctpClientMock.update).toHaveBeenCalledWith(
-            expect.anything(),
-            'order-123',
+            {},
+            "order-123",
             1,
             expect.arrayContaining([
                 {action: 'changePaymentState', paymentState: 'Paid'},
