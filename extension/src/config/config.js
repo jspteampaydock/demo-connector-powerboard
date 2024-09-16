@@ -91,8 +91,8 @@ async function getPowerboardConfig(type = 'all', disableCache = false) {
             "credentials_public_key",
             "credentials_secret_key"
         ].forEach((field) => {
-            if (paydockConfig[group]?.[field]) {
-                paydockConfig[group][field] = decrypt(paydockConfig[group][field], config.clientSecret)
+            if (powerboardConfig[group]?.[field]) {
+                powerboardConfig[group][field] = decrypt(powerboardConfig[group][field], config.clientSecret)
             }
         }))
     }
