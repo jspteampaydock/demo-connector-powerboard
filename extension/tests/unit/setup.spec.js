@@ -1,6 +1,6 @@
 import {jest, expect} from "@jest/globals";
 
-import { setupExtensionResources, cleanupExtensionResources } from '../../src/setup.js';
+import { cleanupExtensionResources } from '../../src/setup.js';
 import config from '../../src/config/config.js';
 import ctpClientBuilder from '../../src/ctp.js';
 import utils from '../../src/utils.js';
@@ -61,3 +61,4 @@ describe('cleanupExtensionResources', () => {
         await expect(cleanupExtensionResources()).rejects.toThrow(`Error: ${JSON.stringify(serializeError(error))}`);
     });
 });
+

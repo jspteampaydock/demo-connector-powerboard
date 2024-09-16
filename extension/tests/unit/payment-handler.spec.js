@@ -48,6 +48,10 @@ describe('Payment Handler', () => {
 
 
     describe('handlePayment', () => {
+        test('should return success', async () => {
+            const result = await paymentHandler.handlePayment(paymentObject, true);
+            expect(Array.isArray(result.actions)).toBe(true)
+        });
         test('should return an error if authToken is missing', async () => {
             const result = await paymentHandler.handlePayment({}, null);
             expect(result.errors).toEqual([

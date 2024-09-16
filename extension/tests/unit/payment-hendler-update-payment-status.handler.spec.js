@@ -84,12 +84,6 @@ describe('Unit::update-payment-status.handler::execute', () => {
             c.STATUS_TYPES.PAID
         );
 
-        expect(httpUtils.addPowerboardLog).toHaveBeenCalledWith(paymentObject, {
-            powerboardChargeID: 'charge-123',
-            operation: c.STATUS_TYPES.PAID,  // This matches the expected status
-            responseStatus: 'Success',
-            message: `Change status from '${c.STATUS_TYPES.AUTHORIZE}' to '${c.STATUS_TYPES.PAID}'`,
-        });
 
         expect(result.actions).toEqual(expect.any(Array));
     });

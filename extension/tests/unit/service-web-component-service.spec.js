@@ -947,4 +947,5 @@ describe('web-component-service.js', () => {
         expect(callPowerboard).toHaveBeenCalledWith(expect.stringContaining('/v1/vault-tokens'), expect.any(Object), 'GET');
     });
 
+
 });

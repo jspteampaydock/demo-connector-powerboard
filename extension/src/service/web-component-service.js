@@ -9,7 +9,7 @@ import {updateOrderPaymentState} from './ct-api-service.js';
 
 const logger = httpUtils.getLogger();
 
-async function makePayment(makePaymentRequestObj, paymentId) {
+async function makePayment(makePaymentRequestObj, paymentObject) {
     try {
         const orderId = makePaymentRequestObj.orderId;
         const paymentSource = makePaymentRequestObj.PowerboardTransactionId;
