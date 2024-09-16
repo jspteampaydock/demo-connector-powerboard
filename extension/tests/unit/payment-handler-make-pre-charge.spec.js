@@ -99,7 +99,7 @@ describe('Integration::PaymentHandler::makePreCharge::', () => {
         );
 
         return request(server)
-            .post('/extension')
+            .post('/')
             .send(preChargeRequest)
             .expect(200)
             .then((response) => {
