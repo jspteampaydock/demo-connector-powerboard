@@ -61,18 +61,27 @@ describe('make-payment.handler', () => {
         const mockResponse = {
             status: 'Success',
             chargeId: 'charge-123',
-            powerboardStatus: c.STATUS_TYPES.PAID,
+            paydockStatus: c.STATUS_TYPES.PAID,
         };
 
         makePayment.mockResolvedValue(mockResponse);
+        createSetCustomFieldAction.mockImplementation((field, value) => ({ action: 'setCustomField', field, value }));
         createAddTransactionActionByResponse.mockReturnValue({ action: 'addTransaction' });
         getPaymentKeyUpdateAction.mockReturnValue({ action: 'setKey' });
         deleteCustomFieldAction.mockReturnValue({ action: 'deleteCustomField' });
 
         const result = await makePaymentHandler.execute(paymentObject);
 
-        expect(result.actions).toHaveLength(9); // Assuming that now we are including all the fields
-        expect.arrayContaining(expect.objectContaining({ action: 'setCustomField', field: 'PowerboardPaymentType' }));
+        expect(result.actions).toHaveLength(7);
+        expect(result.actions).toEqual(expect.arrayContaining([
+            expect.objectContaining({ action: 'setCustomField', field: c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_TYPE }),
+            expect.objectContaining({ action: 'setCustomField', field: c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_STATUS }),
+            expect.objectContaining({ action: 'setCustomField', field: c.CTP_CUSTOM_FIELD_POWERBOARD_TRANSACTION_ID }),
+            expect.objectContaining({ action: 'setCustomField', field: 'CapturedAmount', value: 100.00 }),
+            expect.objectContaining({ action: 'setKey' }),
+            expect.objectContaining({ action: 'addTransaction' }),
+            expect.objectContaining({ action: 'deleteCustomField' }),
+        ]));
     });
 
     test('should handle payment failure and return failure actions', async () => {

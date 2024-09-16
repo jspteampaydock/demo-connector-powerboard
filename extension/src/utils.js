@@ -19,7 +19,7 @@ function getLogger() {
     return loggerInstance;
 }
 
-async function addPowerboardLog(paymentId, data) {
+async function addPowerboardLog(paymentObject, data) {
     const date = new Date();
     const ctpClient = await config.getCtpClient();
 
@@ -39,13 +39,10 @@ async function addPowerboardLog(paymentId, data) {
         }
     ];
 
-    const paymentData = await ctpClient.fetchById(ctpClient.builder.payments, paymentId);
-    const version = paymentData.body.version;
-
     const result = await ctpClient.update(
         ctpClient.builder.payments,
-        paymentId,
-        version,
+        paymentObject.id,
+        paymentObject.version,
         updateActions
     );
 
