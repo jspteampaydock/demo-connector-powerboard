@@ -45,6 +45,7 @@
   },
   "homepage": "https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector",
   "dependencies": {
+    "@commercetools-backend/loggers": "^22.31.0",
     "@babel/preset-env": "^7.24.6",
     "@jest/globals": "^29.7.0",
     "babel-jest": "^29.7.0",
