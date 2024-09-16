@@ -1,11 +1,12 @@
-import {serializeError} from 'serialize-error';
-import loggers from '@commercetools-backend/loggers';
-import {fileURLToPath} from 'url';
-import path from 'path';
-import fs from 'node:fs/promises';
-import config from './config/config.js';
+import {serializeError} from 'serialize-error'
+import loggers  from '@commercetools-backend/loggers';
+import {fileURLToPath} from 'url'
+import path from 'path'
+import fs from 'node:fs/promises'
+import config from './config/config.js'
 
-const {createApplicationLogger} = loggers;
+
+const { createApplicationLogger } = loggers;
 
 let loggerInstance;
 
@@ -19,7 +20,7 @@ function getLogger() {
     return loggerInstance;
 }
 
-async function addPowerboardLog(paymentObject, data) {
+async function addPowerboardLog(paymentId, data) {
     const date = new Date();
     const ctpClient = await config.getCtpClient();
 
@@ -39,10 +40,13 @@ async function addPowerboardLog(paymentObject, data) {
         }
     ];
 
+    const paymentData = await ctpClient.fetchById(ctpClient.builder.payments, paymentId);
+    const version = paymentData.body.version;
+
     const result = await ctpClient.update(
         ctpClient.builder.payments,
-        paymentObject.id,
-        paymentObject.version,
+        paymentId,
+        version,
         updateActions
     );
 

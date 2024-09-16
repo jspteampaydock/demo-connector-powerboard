@@ -7,10 +7,6 @@ const logger = httpUtils.getLogger()
 
 async function processRequest(request, response) {
     if (request.method !== 'POST') {
-        logger.debug(
-            `Received non-POST request: ${request.method}. The request will not be processed...`,
-        )
-
         return httpUtils.sendResponse({
             response,
             statusCode: 400,
@@ -18,7 +14,7 @@ async function processRequest(request, response) {
                 errors: [
                     {
                         code: 'InvalidInput',
-                        message: `Invalid HTTP method.`,
+                        message: 'Invalid HTTP method...',
                     },
                 ],
             },

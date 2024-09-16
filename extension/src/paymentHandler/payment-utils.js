@@ -61,7 +61,7 @@ function createAddTransactionAction({
             state,
             interactionId,
             custom,
-        },
+        }
     }
 }
 

@@ -11,14 +11,19 @@ jest.mock('node-fetch');
 jest.mock('../../src/config/config.js');
 jest.mock('../../src/utils.js');
 
-jest.mock('@commercetools-backend/loggers', () => ({
+const  customerObject = jest.requireActual('../../test-data/customer-object.json');
+let ctpClient;
+
+jest.mock('@commercetools-backend/loggers', () => {
+    return {
         createApplicationLogger: jest.fn(() => ({
             info: jest.fn(),
             error: jest.fn(),
             warn: jest.fn(),
             debug: jest.fn(),
         })),
-    }));
+    };
+});
 jest.mock('../../src/ctp.js', () => ({
     get: jest.fn()
 }));
@@ -71,6 +76,7 @@ describe('web-component-service.js', () => {
 
         mockCtpClient = {
             fetchByKey: jest.fn(),
+            fetchById: jest.fn(),
             update: jest.fn(),
             builder: {
                 payments: 'mockPaymentsPath', // Mocking the payments path
@@ -466,6 +472,13 @@ describe('web-component-service.js', () => {
         makePaymentRequestObj.CommerceToolsUserId = 'user-123';
         makePaymentRequestObj.PowerboardPaymentType = 'card';
 
+        mockCtpClient.fetchById.mockResolvedValue({
+            body: {
+                customerObject
+            }
+        });
+
+
         mockCtpClient.fetchByKey.mockResolvedValue({
             body: {
                 version: 1,
@@ -483,6 +496,7 @@ describe('web-component-service.js', () => {
                 resource: {data: {vault_token: 'vault-token-123', _id: 'charge-456'}},
             },
         });
+
 
         const response = await serviceModule.makePayment(makePaymentRequestObj);
 
@@ -749,7 +763,6 @@ describe('web-component-service.js', () => {
             },
         });
         updateOrderPaymentState.mockResolvedValue(true);
-        setItem.mockResolvedValue(null);
         const response = await serviceModule.makePayment(makePaymentRequestObj);
 
         expect(response.status).toBe('Success');
@@ -771,8 +784,6 @@ describe('web-component-service.js', () => {
         };
 
         config.getPowerboardConfig.mockResolvedValue(configurations);
-        setItem.mockResolvedValue(null);
-
         callPowerboard.mockResolvedValue({
             response: {
                 status: 201,
