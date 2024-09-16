@@ -1,5 +1,6 @@
 import {CHARGE_STATUSES} from './constants';
 import PowerboardApiAdaptor from './powerboard-api-adaptor';
+import {decrypt, encrypt} from "./helpers";
 
 class CommerceToolsAPIAdapter {
     constructor(env) {
@@ -95,7 +96,21 @@ class CommerceToolsAPIAdapter {
         };
         const notificationUrl = await this.getNotificationUrl();
         this.updateAPINotification(group, data.value, notificationUrl);
-        return await this.makeRequest('/custom-objects', 'POST', requestData);
+
+        if (requestData.value.credentials_access_key) {
+            requestData.value.credentials_access_key = await encrypt(requestData.value.credentials_access_key, this.clientSecret);
+        }
+        if (requestData.value.credentials_public_key) {
+            requestData.value.credentials_public_key = await encrypt(requestData.value.credentials_public_key, this.clientSecret);
+        }
+        if (requestData.value.credentials_secret_key) {
+            requestData.value.credentials_secret_key = await encrypt(requestData.value.credentials_secret_key, this.clientSecret);
+        }
+        await this.makeRequest('/custom-objects', 'POST', requestData)
+
+        data = await this.getConfigs(group);
+
+        return data;
     }
 
     updateAPINotification(group, data, notificationUrl) {
@@ -119,9 +134,21 @@ class CommerceToolsAPIAdapter {
     }
 
     async getConfigs(group) {
-        return await this.makeRequest('/custom-objects/powerboardConfigContainer/' + group);
-    }
 
+        let data = await this.makeRequest('/custom-objects/powerboardConfigContainer/' + group);
+
+        if (data.value.credentials_access_key) {
+            data.value.credentials_access_key = await decrypt(data.value.credentials_access_key, this.clientSecret);
+        }
+        if (data.value.credentials_public_key) {
+            data.value.credentials_public_key = await decrypt(data.value.credentials_public_key, this.clientSecret);
+        }
+        if (data.value.credentials_secret_key) {
+            data.value.credentials_secret_key = await decrypt(data.value.credentials_secret_key, this.clientSecret);
+        }
+
+        return data;
+    }
     async getLogs() {
         let logs = [];
         let powerboardLogs = await this.makeRequest('/payments/?&sort=createdAt+desc');
@@ -139,7 +166,6 @@ class CommerceToolsAPIAdapter {
                 })
             });
         }
-        return logs;
     }
 
 

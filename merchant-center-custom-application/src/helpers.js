@@ -42,6 +42,25 @@ export const createGraphQlUpdateActions = (actions) =>
     []
   );
 
+export const encrypt = async (data, clientSecret) =>  {
+  const keyArrayLen = clientSecret.length;
+
+  return data.split("").map((dataElement, index) => {
+    let remainder = index % keyArrayLen;
+
+    return String.fromCharCode(dataElement.charCodeAt(0) * clientSecret.charCodeAt(remainder))
+  }).join("");
+}
+
+export const decrypt = (data, clientSecret) => {
+  const keyArrayLen = clientSecret.length;
+
+  return data.split("").map((dataElement, index) => {
+    let remainder = index % keyArrayLen;
+
+    return String.fromCharCode(dataElement.charCodeAt(0) / clientSecret.charCodeAt(remainder))
+  }).join("");
+}
 export const convertToActionData = (draft) => ({
   ...draft,
   name: transformLocalizedFieldToLocalizedString(draft.nameAllLocales || []),

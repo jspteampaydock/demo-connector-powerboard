@@ -26,7 +26,7 @@ async function execute(paymentObject) {
         'PaymentExtensionRequest'
     ];
 
-    const [response] = await Promise.all([makePayment(makePaymentRequestObj, paymentObject.id)])
+    const [response] = await Promise.all([makePayment(makePaymentRequestObj, paymentObject)])
     if (response.status === 'Failure') {
         const errorMessage = response.message ?? "Invalid transaction details"
         actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
@@ -64,19 +64,19 @@ async function execute(paymentObject) {
 
 
 function generateActionsFromResponse(actions, response, requestBodyJson, capturedAmount, paymentObject, powerboardStatus) {
-    const paymentMethod = requestBodyJson?.PaydockPaymentType;
-    const paydockTransactionId = response?.chargeId ?? requestBodyJson?.PaydockTransactionId;
+    const paymentMethod = requestBodyJson?.PowerboardPaymentType;
+    const powerboardTransactionId = response?.chargeId ?? requestBodyJson?.PowerboardTransactionId;
     const commerceToolsUserId = requestBodyJson?.CommerceToolsUserId;
     const additionalInfo = requestBodyJson?.AdditionalInfo;
 
     if (paymentMethod) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_PAYMENT_TYPE, paymentMethod));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_TYPE, paymentMethod));
     }
     if (powerboardStatus) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_PAYMENT_STATUS, powerboardStatus));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_STATUS, powerboardStatus));
     }
-    if (paydockTransactionId) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_TRANSACTION_ID, paydockTransactionId));
+    if (powerboardTransactionId) {
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_TRANSACTION_ID, powerboardTransactionId));
     }
 
     if (commerceToolsUserId) {

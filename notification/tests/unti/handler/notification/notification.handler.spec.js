@@ -90,7 +90,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-paid';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -106,7 +106,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-paid';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -124,7 +124,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-pending';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -153,7 +153,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-pending';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -182,7 +182,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-authorize';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -211,7 +211,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-authorize';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -240,7 +240,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-cancelled';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -269,7 +269,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-refunded';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -298,7 +298,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-requested';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -327,7 +327,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-failed';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {
@@ -356,7 +356,7 @@ describe('handler::notification::notification.handler', () => {
         updateAction[0].value = 'powerboard-failed';
 
         return request(server)
-            .post('/')
+            .post('/notifications')
             .send(data)
             .expect(200)
             .then((response) => {

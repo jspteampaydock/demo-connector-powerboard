@@ -47,6 +47,16 @@ function getNotificationConfig() {
   }
 }
 
+async function decrypt(data, clientSecret) {
+  const keyArrayLen = clientSecret.length;
+
+  return data.split("").map((dataElement, index) => {
+    const remainder = index % keyArrayLen;
+
+    return String.fromCharCode(dataElement.charCodeAt(0) / clientSecret.charCodeAt(remainder))
+  }).join("");
+}
+
 async function getPowerboardConfig(type = 'all') {
   if (!powerboardConfig) {
     ctpClient = await getCtpClient();
@@ -61,6 +71,16 @@ async function getPowerboardConfig(type = 'all') {
         powerboardConfig[element.key] = element.value
       })
     }
+
+    ["live","sandbox"].forEach((group) => [
+      "credentials_access_key",
+      "credentials_public_key",
+      "credentials_secret_key"
+    ].forEach((field)=>{
+      if (powerboardConfig[group]?.[field]) {
+        powerboardConfig[group][field] = decrypt(powerboardConfig[group][field], config.clientSecret)
+      }
+    }))
   }
   switch (type) {
     case 'connection':

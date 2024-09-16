@@ -1,5 +1,6 @@
 import {expect, jest} from '@jest/globals';
 import * as serviceModule from '../../src/service/web-component-service.js';
+import {setItem} from '../../src/utils/custom-objects-utils.js';
 import {updateOrderPaymentState} from '../../src/service/ct-api-service.js';
 import {callPowerboard} from '../../src/service/powerboard-api-service.js';
 import config from '../../src/config/config.js';

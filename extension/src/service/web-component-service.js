@@ -52,7 +52,7 @@ async function makePayment(makePaymentRequestObj, paymentId) {
         if (input.CommerceToolsUserId && input.CommerceToolsUserId !== 'not authorized') {
              customerId = await getCustomerIdByVaultToken(input.CommerceToolsUserId, vaultToken);
         }
-        response = await handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentId);
+        response = await handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentObject);
         if (response) {
             status = response.status;
             message = response.message;
@@ -60,7 +60,7 @@ async function makePayment(makePaymentRequestObj, paymentId) {
             chargeId = response.chargeId;
         }
         await updateOrderPaymentState(orderId, powerboardStatus);
-        await httpUtils.addPowerboardLog(paymentId, {
+        await httpUtils.addPowerboardLog(paymentObject,{
             powerboardChargeID: chargeId,
             operation: powerboardStatus,
             status,
@@ -73,7 +73,7 @@ async function makePayment(makePaymentRequestObj, paymentId) {
     }
 }
 
-async function handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentId) {
+async function handlePaymentType(input, vaultToken, customerId, makePaymentRequestObj, paymentType, paymentSource, paymentObject) {
     const configurations = await config.getPowerboardConfig('connection');
     const amount = makePaymentRequestObj.amount.value;
     const currency = makePaymentRequestObj.amount.currency ?? 'AUD';
@@ -87,7 +87,8 @@ async function handlePaymentType(input, vaultToken, customerId, makePaymentReque
                         amount,
                         currency,
                         vaultToken,
-                        customerId
+                        customerId,
+                        paymentObject
                     });
                 }
                 break;
@@ -100,7 +101,7 @@ async function handlePaymentType(input, vaultToken, customerId, makePaymentReque
                     currency,
                     paymentSource,
                     paymentType,
-                    paymentId
+                    paymentObject
                 });
             case 'PayPal Smart':
             case 'Google Pay':
@@ -202,7 +203,7 @@ async function createStandalone3dsToken(data) {
     }
 }
 
-async function cardFlow({configurations, input, amount, currency, vaultToken, customerId}) {
+async function cardFlow({configurations, input, amount, currency, vaultToken, customerId, paymentObject}) {
     try {
         let result;
 
@@ -215,7 +216,8 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     amount,
                     currency,
                     vaultToken,
-                    customerId
+                    customerId,
+                    paymentObject
                 });
                 break;
             case (
@@ -228,7 +230,8 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     amount,
                     currency,
                     vaultToken,
-                    customerId
+                    customerId,
+                    paymentObject
                 });
                 break;
             case (configurations.card_3ds === 'Standalone 3DS' || configurations.card_3ds === 'In-built 3DS'):
@@ -238,7 +241,8 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     amount,
                     currency,
                     vaultToken,
-                    customerId
+                    customerId,
+                    paymentObject
                 });
                 break;
             case (configurations.card_fraud === 'Standalone Fraud' || configurations.card_fraud === 'In-built Fraud'):
@@ -248,7 +252,8 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     amount,
                     currency,
                     vaultToken,
-                    customerId
+                    customerId,
+                    paymentObject
                 });
                 break;
             case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save === 'Vault token' && input.SaveCard): {
@@ -258,11 +263,11 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     user_id: input.CommerceToolsUserId,
                     customer_id: customerId,
                 });
-                result = await cardCharge({configurations, input, amount, currency, vaultToken});
+                result = await cardCharge({configurations, input, amount, currency, vaultToken, paymentObject});
             }
                 break;
             default:
-                result = await cardCharge({configurations, input, amount, currency, vaultToken});
+                result = await cardCharge({configurations, input, amount, currency, vaultToken, paymentObject});
         }
 
         return result;
@@ -278,7 +283,8 @@ async function cardFraud3DsCharge({
                                       amount,
                                       currency,
                                       vaultToken,
-                                      customerId
+                                      customerId,
+                                      paymentObject
                                   }) {
     try {
         let result;
@@ -327,7 +333,8 @@ async function cardFraud3DsCharge({
                 configurations,
                 input,
                 vaultToken,
-                type: 'card'
+                type: 'card',
+                paymentObject
             });
         }
 
@@ -390,7 +397,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
+    result.powerboardStatus = getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -895,7 +902,7 @@ async function cardCustomerCharge({
                 configurations,
                 input,
                 vaultToken,
-                type: 'card'
+                type: 'card',
             });
         }
 
@@ -1064,14 +1071,14 @@ function generateCustomerRequest(input, vaultToken, type, configurations) {
     return customerRequest;
 }
 
-async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type}) {
+async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type, paymentObject}) {
     let customerId = null;
     const customerRequest = generateCustomerRequest(input, vaultToken, type, configurations);
     const customerResponse = await createCustomer(customerRequest);
     if (customerResponse.status === 'Success' && customerResponse.customerId) {
         customerId = customerResponse.customerId;
 
-        await httpUtils.addPowerboardLog({
+        await httpUtils.addPowerboardLog(paymentObject, {
             powerboardChargeID: input.PowerboardTransactionId,
             operation: 'Create Customer',
             status: customerResponse.status,
@@ -1094,7 +1101,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             });
             const messageLog = result.success ? 'Customer Vault Token saved successfully' : result.error;
             const statusLog = result.success ? 'Success' : 'Failure';
-            await httpUtils.addPowerboardLog({
+            await httpUtils.addPowerboardLog(paymentObject,{
                 powerboardChargeID: input.PowerboardTransactionId,
                 operation: 'Save Customer Vault Token',
                 status: statusLog,
@@ -1102,7 +1109,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             });
         }
     } else {
-        await httpUtils.addPowerboardLog({
+        await httpUtils.addPowerboardLog(paymentObject, {
             powerboardChargeID: input.PowerboardTransactionId,
             operation: 'Create Customer',
             status: customerResponse.status,

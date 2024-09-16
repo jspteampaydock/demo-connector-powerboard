@@ -93,7 +93,7 @@ export {
     createSetCustomFieldAction,
     isValidMetadata,
     getPaymentKeyUpdateAction,
-    createAddTransactionActionByResponse,
     createAddTransactionAction,
+    createAddTransactionActionByResponse,
     deleteCustomFieldAction
 }

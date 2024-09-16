@@ -204,6 +204,7 @@ const SandboxConnectionForm = () => {
             setVersion(response.version ?? null);
             setId(response.id ?? null);
             setCreatedAt(response.createdAt ?? null);
+            formik.setValues(response.value)
 
             setSuccess(true);
             setLoading(false);
