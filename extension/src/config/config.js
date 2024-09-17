@@ -99,7 +99,11 @@ async function getPowerboardConfig(type = 'all', disableCache = false) {
     switch (type) {
         case 'connection':
             if (powerboardConfig['sandbox']?.sandbox_mode === 'Yes') {
-                powerboardConfig['sandbox'].api_url = config.powerboardSandboxUrl;
+                if(config.powerboardWidgetTypeSdk === 'preproduction_cba'){
+                    powerboardConfig['sandbox'].api_url = config.powerboardSandboxUrl;
+                }else{
+                    powerboardConfig['sandbox'].api_url = config.powerboardStagingUrl;
+                }
                 return powerboardConfig['sandbox'] ?? {};
             }
             powerboardConfig['live'].api_url = config.powerboardLiveUrl;
