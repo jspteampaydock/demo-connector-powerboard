@@ -148,7 +148,10 @@ describe('processNotification', () => {
                 fetchById: jest.fn(() => ({
                     body: {
                         id: "12345678-9abc-def0-1234-56789abcdef0",
-                        version: 3
+                        version: 3,
+                        amountPlanned:{
+                            centAmount:1000
+                        }
                     }
                 })),
                 update: jest.fn(),
@@ -156,7 +159,10 @@ describe('processNotification', () => {
                 fetchOrderByNymber: jest.fn(() => ({
                     body: {
                         id: "23456789-abcd-ef01-2345-6789abcdef01",
-                        version: 3
+                        version: 3,
+                        amountPlanned:{
+                            centAmount:1000
+                        }
                     }
                 }))
             }

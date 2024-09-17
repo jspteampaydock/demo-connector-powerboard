@@ -37,7 +37,7 @@ function addPowerboardLog(data) {
         },
         "fields": {
             "createdAt": date.toISOString(),
-            "chargeId": data.chargeId,
+            "chargeId": data.powerboardChargeID,
             "operation": data.operation,
             "status": data.status,
             "message": message
