@@ -1078,7 +1078,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
     if (customerResponse.status === 'Success' && customerResponse.customerId) {
         customerId = customerResponse.customerId;
 
-        httpUtils.addPowerboardLog(paymentObject, {
+        httpUtils.addPowerboardLog({
             powerboardChargeID: input.PowerboardTransactionId,
             operation: 'Create Customer',
             status: customerResponse.status,

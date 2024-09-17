@@ -59,7 +59,7 @@ async function execute(paymentObject) {
     httpUtils.addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: newStatus,
-        responseStatus,
+        status: responseStatus,
         message
     })
     actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, response));
