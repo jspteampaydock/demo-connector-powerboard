@@ -19,7 +19,7 @@ import validate from './validate';
 import ColorPicker from './color-picker';
 import PulseLoader from 'react-spinners/PulseLoader';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';
-import {INITIAL_SANDBOX_CONNECTION_FORM, INITIAL_WIDGET_FORM} from '../../constants';
+import { INITIAL_WIDGET_FORM } from '../../constants';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
 import Grid from '@commercetools-uikit/grid';
 
@@ -347,36 +347,6 @@ const WidgetConfigurationForm = () => {
                                     </Spacings.Stack>
                                 </Constraints.Horizontal>
                             </CollapsiblePanel>
-                            {/*
-                            <CollapsiblePanel header="Bank accounts" isDefaultClosed={true}
-                                              className="collapsible-panel hide">
-                                <Constraints.Horizontal max={'scale'}>
-                                    <Spacings.Stack scale="xl">
-
-                                        <TextField
-                                            name="payment_methods_bank_accounts_title"
-                                            title={intl.formatMessage(messages.paymentMethodsTitle)}
-                                            value={formik.values.payment_methods_bank_accounts_title}
-                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_bank_accounts_title}
-                                            touched={formik.touched.payment_methods_bank_accounts_title}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            isRequired={true}
-                                        />
-
-                                        <TextField
-                                            name="payment_methods_bank_accounts_description"
-                                            title={intl.formatMessage(messages.paymentMethodsDescription)}
-                                            value={formik.values.payment_methods_bank_accounts_description}
-                                            touched={formik.touched.payment_methods_bank_accounts_description}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            isRequired={false}
-                                        />
-                                    </Spacings.Stack>
-                                </Constraints.Horizontal>
-                            </CollapsiblePanel>
-                            */}
                             <CollapsiblePanel header="Wallets" isDefaultClosed={true} className="collapsible-panel">
                                 <Constraints.Horizontal max={'scale'}>
                                     <Spacings.Stack scale="xl">
@@ -422,29 +392,6 @@ const WidgetConfigurationForm = () => {
                                             onBlur={formik.handleBlur}
                                             isRequired={false}
                                         />
-
-                                        {/*
-                                        <TextField
-                                            name="payment_methods_wallets_afterpay_v2_title"
-                                            title={intl.formatMessage(messages.paymentMethodsAfterpayV2Title)}
-                                            value={formik.values.payment_methods_wallets_afterpay_v2_title}
-                                            errors={TextField.toFieldErrors(formik.errors).payment_methods_wallets_afterpay_v2_title}
-                                            touched={formik.touched.payment_methods_wallets_afterpay_v2_title}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            isRequired={true}
-                                        />
-
-                                        <TextField
-                                            name="payment_methods_wallets_afterpay_v2_description"
-                                            title={intl.formatMessage(messages.paymentMethodsAfterpayV2Description)}
-                                            value={formik.values.payment_methods_wallets_afterpay_v2_description}
-                                            touched={formik.touched.payment_methods_wallets_afterpay_v2_description}
-                                            onChange={formik.handleChange}
-                                            onBlur={formik.handleBlur}
-                                            isRequired={false}
-                                        />
-                                        */}
                                         <TextField
                                             name="payment_methods_wallets_paypal_title"
                                             title={intl.formatMessage(messages.paymentMethodsPaypalTitle)}

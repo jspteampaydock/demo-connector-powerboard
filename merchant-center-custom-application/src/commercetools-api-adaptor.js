@@ -137,14 +137,16 @@ class CommerceToolsAPIAdapter {
 
         let data = await this.makeRequest('/custom-objects/powerboardConfigContainer/' + group);
 
-        if (data.value.credentials_access_key) {
-            data.value.credentials_access_key = await decrypt(data.value.credentials_access_key, this.clientSecret);
-        }
-        if (data.value.credentials_public_key) {
-            data.value.credentials_public_key = await decrypt(data.value.credentials_public_key, this.clientSecret);
-        }
-        if (data.value.credentials_secret_key) {
-            data.value.credentials_secret_key = await decrypt(data.value.credentials_secret_key, this.clientSecret);
+        if(data) {
+            if (data.value.credentials_access_key) {
+                data.value.credentials_access_key = await decrypt(data.value.credentials_access_key, this.clientSecret);
+            }
+            if (data.value.credentials_public_key) {
+                data.value.credentials_public_key = await decrypt(data.value.credentials_public_key, this.clientSecret);
+            }
+            if (data.value.credentials_secret_key) {
+                data.value.credentials_secret_key = await decrypt(data.value.credentials_secret_key, this.clientSecret);
+            }
         }
 
         return data;
@@ -166,6 +168,7 @@ class CommerceToolsAPIAdapter {
                 })
             });
         }
+        return logs;
     }
 
 
