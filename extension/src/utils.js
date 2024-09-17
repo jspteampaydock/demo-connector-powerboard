@@ -1,14 +1,15 @@
 import {serializeError} from 'serialize-error'
-import loggers  from '@commercetools-backend/loggers';
+import loggers from '@commercetools-backend/loggers';
 import {fileURLToPath} from 'url'
 import path from 'path'
 import fs from 'node:fs/promises'
 import config from './config/config.js'
 
 
-const { createApplicationLogger } = loggers;
+const {createApplicationLogger} = loggers;
 
 let loggerInstance;
+const logActions = [];
 
 function getLogger() {
     if (!loggerInstance) {
@@ -20,37 +21,22 @@ function getLogger() {
     return loggerInstance;
 }
 
-async function addPowerboardLog(paymentId, data) {
+function addPowerboardLog( data) {
     const date = new Date();
-    const ctpClient = await config.getCtpClient();
 
-    const updateActions = [
-        {
-            "action": "addInterfaceInteraction",
-            "type": {
-                "key": "powerboard-payment-log-interaction"
-            },
-            "fields": {
-                "createdAt": date.toISOString(),
-                "chargeId": data.powerboardChargeID,
-                "operation": data.operation,
-                "status": data.status,
-                "message": data.message
-            }
+    logActions.push({
+        "action": "addInterfaceInteraction",
+        "type": {
+            "key": "powerboard-payment-log-interaction"
+        },
+        "fields": {
+            "createdAt": date.toISOString(),
+            "chargeId": data.powerboardChargeID,
+            "operation": data.operation,
+            "status": data.status,
+            "message": data.message
         }
-    ];
-
-    const paymentData = await ctpClient.fetchById(ctpClient.builder.payments, paymentId);
-    const version = paymentData.body.version;
-
-    const result = await ctpClient.update(
-        ctpClient.builder.payments,
-        paymentId,
-        version,
-        updateActions
-    );
-
-    return result?.body?.version;
+    })
 }
 
 function collectRequestData(request) {
@@ -102,11 +88,11 @@ async function readAndParseJsonFile(pathToJsonFileFromProjectRoot) {
 
 async function deleteElementByKeyIfExists(ctpClient, key) {
     try {
-        const { body } = await ctpClient.fetchByKey(
+        const {body} = await ctpClient.fetchByKey(
             ctpClient.builder.extensions,
             key,
         )
-        if(body){
+        if (body) {
             await ctpClient.delete(ctpClient.builder.extensions, body.id, body.version)
         }
         return body
@@ -116,10 +102,16 @@ async function deleteElementByKeyIfExists(ctpClient, key) {
     }
 }
 
+
+function getLogsAction() {
+    return logActions;
+}
+
 export default {
     collectRequestData,
     sendResponse,
     getLogger,
+    getLogsAction,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
     addPowerboardLog,
