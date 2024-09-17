@@ -4,6 +4,7 @@ import config from '../config/config.js'
 const {logLevel} = config.getModuleConfig()
 
 let obj
+let logActions = [];
 
 function getLogger() {
     if (obj === undefined) {
@@ -21,34 +22,34 @@ function getLogger() {
     return obj
 }
 
-async function addPowerboardLog(paymentId, version, data) {
+function addPowerboardLog(data) {
     const date = new Date();
-
-    const updateActions = [
-        {
-            "action": "addInterfaceInteraction",
-            "type": {
-                "key": "powerboard-payment-log-interaction"
-            },
-            "fields": {
-                "createdAt": date.toISOString(),
-                "chargeId": data.chargeId,
-                "operation": data.operation,
-                "status": data.status,
-                "message": data.message
-            }
+    let message = '';
+    if (typeof data.message === 'string'){
+        message = data.message
+    }else{
+        message = data?.message?.message ?? ''
+    }
+    logActions.push({
+        "action": "addInterfaceInteraction",
+        "type": {
+            "key": "powerboard-payment-log-interaction"
+        },
+        "fields": {
+            "createdAt": date.toISOString(),
+            "chargeId": data.chargeId,
+            "operation": data.operation,
+            "status": data.status,
+            "message": message
         }
-    ];
-
-    const ctpClient = await config.getCtpClient();
-    const result = await ctpClient.update(
-        ctpClient.builder.payments,
-        paymentId.id,
-        version,
-        updateActions
-    );
-
-    return result?.body?.version;
+    })
 }
 
-export {getLogger, addPowerboardLog}
+function getLogActions(){
+    const result = logActions
+    logActions = [];
+
+    return result;
+}
+
+export {getLogger, addPowerboardLog, getLogActions}
