@@ -18,6 +18,7 @@ import './sandbox-connection.css';
 import { ContentNotification } from '@commercetools-uikit/notifications';
 import ValidationPowerboardData from '../../validation-powerboard-data';
 import CommerceToolsAPIAdapter from '../../commercetools-api-adaptor';
+import PulseLoader from 'react-spinners/PulseLoader';
 import { INITIAL_SANDBOX_CONNECTION_FORM } from '../../constants';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
 
