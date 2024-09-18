@@ -60,7 +60,7 @@ async function makePayment(makePaymentRequestObj, paymentObject) {
             chargeId = response.chargeId;
         }
         await updateOrderPaymentState(orderId, powerboardStatus);
-        await httpUtils.addPowerboardLog(paymentObject,{
+        httpUtils.addPowerboardLog({
             powerboardChargeID: chargeId,
             operation: powerboardStatus,
             status,
@@ -1078,7 +1078,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
     if (customerResponse.status === 'Success' && customerResponse.customerId) {
         customerId = customerResponse.customerId;
 
-        await httpUtils.addPowerboardLog(paymentObject, {
+        httpUtils.addPowerboardLog({
             powerboardChargeID: input.PowerboardTransactionId,
             operation: 'Create Customer',
             status: customerResponse.status,
@@ -1101,7 +1101,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             });
             const messageLog = result.success ? 'Customer Vault Token saved successfully' : result.error;
             const statusLog = result.success ? 'Success' : 'Failure';
-            await httpUtils.addPowerboardLog(paymentObject,{
+            httpUtils.addPowerboardLog({
                 powerboardChargeID: input.PowerboardTransactionId,
                 operation: 'Save Customer Vault Token',
                 status: statusLog,
@@ -1109,7 +1109,7 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             });
         }
     } else {
-        await httpUtils.addPowerboardLog(paymentObject, {
+        httpUtils.addPowerboardLog( {
             powerboardChargeID: input.PowerboardTransactionId,
             operation: 'Create Customer',
             status: customerResponse.status,

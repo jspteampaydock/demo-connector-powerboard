@@ -56,16 +56,17 @@ async function execute(paymentObject) {
         response.message = "Merchant refunded money"
         message = `Refunded ${requestBodyJson.refundAmount}`
     }
-    await httpUtils.addPowerboardLog(paymentObject.id,{
+    httpUtils.addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: newStatus,
-        responseStatus,
+        status: responseStatus,
         message
     })
     actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, response));
     if (paymentStatus && orderStatus) {
         await updateOrderStatus(orderNumber, paymentStatus, orderStatus)
     }
+
     return {
         actions,
     }

@@ -1,7 +1,7 @@
 import {serializeError} from 'serialize-error'
 import VError from 'verror'
 import config from '../../config/config.js'
-import {addPowerboardLog} from '../../utils/logger.js'
+import {addPowerboardLog, getLogActions} from '../../utils/logger.js'
 import ctp from '../../utils/ctp.js'
 import customObjectsUtils from '../../utils/custom-objects-utils.js'
 import {callPowerboard} from './powerboard-api-service.js';
@@ -21,7 +21,7 @@ async function processNotification(
         result.message = 'Reference not found'
     } else {
         const paymentKey = notification.reference
-        const paymentObject = await getPaymentByMerchantReference(ctpClient, paymentKey)
+        let paymentObject = await getPaymentByMerchantReference(ctpClient, paymentKey)
 
         if (!paymentObject) {
             result.status = 'Failure'
@@ -53,6 +53,18 @@ async function processNotification(
                 default:
                     result.status = 'Failure'
                     result.message = 'Notification Event not found'
+            }
+
+            const logs = getLogActions();
+
+            if (logs.length) {
+                paymentObject = await ctpClient.fetchById(ctpClient.builder.payments, paymentObject.id);
+                await ctpClient.update(
+                    ctpClient.builder.payments,
+                    paymentObject.body.id,
+                    paymentObject.body.version,
+                    logs
+                );
             }
         }
     }
@@ -98,7 +110,12 @@ async function processWebhook(event, payment, notification, ctpClient) {
         })
     })
     try {
-        await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await ctpClient.update(
+            ctpClient.builder.payments,
+            currentPayment.id,
+            currentVersion,
+            updateActions.concat(getLogActions())
+        )
         await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
         result.status = 'Success'
     } catch (error) {
@@ -106,12 +123,13 @@ async function processWebhook(event, payment, notification, ctpClient) {
         result.message = error
     }
 
-    await addPowerboardLog(currentPayment.id, currentVersion,{
+    addPowerboardLog({
         powerboardChargeID: chargeId,
         operation,
         status: result.status,
         message: result.message ?? ''
     })
+
     return result
 }
 
@@ -143,7 +161,12 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                 })
             }]
         try {
-            await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+            await ctpClient.update(
+                ctpClient.builder.payments,
+                currentPayment.id,
+                currentVersion,
+                updateActions.concat(getLogActions())
+            )
         } catch (error) {
             result.status = 'Failure'
             result.message = error
@@ -176,7 +199,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
         result.status = 'UnfulfilledCondition'
         result.message = `Can't charge.${errorMessageToString(response)}`
 
-        await addPowerboardLog(payment.id, payment.version, {
+        addPowerboardLog({
             powerboardChargeID: updatedChargeId,
             operation: 'Charge',
             status: result.status,
@@ -193,7 +216,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
 
-            await addPowerboardLog(payment.id, payment.version, {
+            addPowerboardLog( {
                 powerboardChargeID: updatedChargeId,
                 operation: 'Fraud Attach',
                 status: result.status,
@@ -248,7 +271,7 @@ async function handleFraudNotification(response, updatedChargeId, ctpClient, pay
 
         result.status = 'Success'
 
-        await addPowerboardLog(currentPayment.id, currentVersion, {
+        addPowerboardLog({
             powerboardChargeID: updatedChargeId,
             operation,
             status: result.status,
@@ -447,7 +470,12 @@ async function processRefundSuccessNotification(event, payment, notification, ct
         ]
 
         try {
-            await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+            await ctpClient.update(
+                ctpClient.builder.payments,
+                currentPayment.id,
+                currentVersion,
+                updateActions.concat(getLogActions())
+            )
             await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Complete');
 
             result.status = 'Success'
@@ -457,7 +485,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             result.message = error
         }
     }
-    await addPowerboardLog(payment.id, currentVersion, {
+    addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: powerboardStatus,
         status: result.status,

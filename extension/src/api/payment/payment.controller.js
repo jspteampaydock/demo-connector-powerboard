@@ -38,6 +38,10 @@ async function processRequest(request, response) {
             return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}})
         }
 
+        if (paymentResult.actions) {
+            paymentResult.actions = paymentResult.actions.concat(httpUtils.getLogsAction())
+        }
+
         const result = {
             response,
             statusCode: paymentResult.actions ? 200 : 400,

@@ -153,10 +153,10 @@ class CommerceToolsAPIAdapter {
     }
     async getLogs() {
         let logs = [];
-        let powerboardLogs = await this.makeRequest('/payments/?&sort=createdAt+desc');
-        if (powerboardLogs.results) {
-            powerboardLogs.results.forEach((powerboardLog) => {
-                powerboardLog.interfaceInteractions.forEach((interactionLog) => {
+        let paydockLogs = await this.makeRequest('/payments/?&sort=createdAt+desc&limit=500');
+        if (paydockLogs.results) {
+            paydockLogs.results.forEach((paydockLog) => {
+                paydockLog.interfaceInteractions.forEach((interactionLog) => {
                     let message = typeof interactionLog.fields.message === 'string' ? interactionLog.fields.message : null;
                     logs.push({
                         operation_id: interactionLog.fields.chargeId,
@@ -168,7 +168,13 @@ class CommerceToolsAPIAdapter {
                 })
             });
         }
-        return logs;
+
+        return logs.sort((first, second) => {
+            const date1 = Date.parse(first.date);
+            const date2 = Date.parse(second.date);
+
+            return date2 - date1
+        })
     }
 
 
