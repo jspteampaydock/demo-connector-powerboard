@@ -1,5 +1,3 @@
-import c from '../config/constants.js'
-
 function createSetCustomFieldAction(name, response) {
     if(typeof response === 'object'){
         response = JSON.stringify(response);
@@ -25,13 +23,10 @@ function isValidMetadata(str) {
 }
 
 function getPaymentKeyUpdateAction(paymentKey, request, response) {
-    const requestBodyJson = JSON.parse(request.body)
-    const reference = requestBodyJson.reference?.toString()
+    const reference = request.reference?.toString()
     const pspReference = response.pspReference?.toString()
     const newReference = pspReference || reference
     let paymentKeyUpdateAction
-    // ensure the key and new reference is different, otherwise the error with
-    // 'code': 'InvalidOperation', 'message': ''key' has no changes.' will return by commercetools API.
     if (newReference !== paymentKey) {
         paymentKeyUpdateAction = {
             action: 'setKey',

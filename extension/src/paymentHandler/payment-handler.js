@@ -10,41 +10,6 @@ import c from "../config/constants.js";
 import {
     deleteCustomFieldAction
 } from './payment-utils.js'
-import errorMessages from '../validator/error-messages.js'
-
-async function handlePayment(paymentObject, authToken) {
-    if (!authToken) {
-        return {
-            errors: [
-                {
-                    code: 'Unauthorized',
-                    message: errorMessages.UNAUTHORIZED_REQUEST,
-                },
-            ],
-        }
-    }
-
-    const validatePaymentErrors = _validatePaymentRequest(
-        paymentObject,
-        authToken,
-    )
-    if (validatePaymentErrors)
-        return {
-            errors: validatePaymentErrors,
-        }
-
-    const handlers = _getPaymentHandlers(paymentObject)
-    if (!handlers) {
-        return {actions: []}
-    }
-    const handlerResponses = await Promise.all(
-        handlers.map((handler) => handler.execute(paymentObject)),
-    )
-    const handlerResponse = {
-        actions: handlerResponses.flatMap((result) => result.actions),
-    }
-    return {actions: handlerResponse.actions}
-}
 
 
 async function handlePaymentByExtRequest(paymentObject, authToken) {
@@ -63,6 +28,9 @@ async function handlePaymentByExtRequest(paymentObject, authToken) {
     const additionalInformation = paymentCustomFields?.AdditionalInformation ?? null;
 
     const objPaymentExtensionRequest = JSON.parse(paymentExtensionRequest);
+    if(objPaymentExtensionRequest === null){
+        return null
+    }
     const actionExtension = objPaymentExtensionRequest.action ?? null;
     const handlers = [];
     if (!actionExtension || (actionExtension === 'FromNotification' && additionalInformation)) return null
@@ -70,11 +38,14 @@ async function handlePaymentByExtRequest(paymentObject, authToken) {
         case  c.CTP_CUSTOM_FIELD_GET_PAYMENT_METHODS_REQUEST:
             handlers.push(getPaymentMethodsHandler)
             break;
-        case  c.CTP_INTERACTION_TYPE_GET_VAULT_TOKEN:
+        case  c.CTP_INTERACTION_TYPE_GET_VAULT_TOKEN_REQUEST:
             handlers.push(getVaultTokenHandler)
             break;
-        case c.CTP_INTERACTION_TYPE_MAKE_PAYMENT:
+        case c.CTP_INTERACTION_TYPE_MAKE_PAYMENT_REQUEST:
             handlers.push(makePaymentHandler)
+            break;
+        case c.CTP_CUSTOM_FIELD_GET_STANDALONE_3DS_TOKEN_REQUEST:
+            handlers.push(getStandaloneTokenHandler)
             break;
         case c.CTP_CUSTOM_GET_UPDATE_STATUS:
             handlers.push(updatePaymentStatusHandler)
@@ -103,31 +74,6 @@ async function handlePaymentByExtRequest(paymentObject, authToken) {
     return {actions}
 }
 
-function _getPaymentHandlers(paymentObject) {
-
-    // custom field on payment is not a mandatory field.
-    if (!paymentObject.custom) return []
-
-    const handlers = []
-    const customFields = paymentObject.custom.fields
-
-
-    if (customFields.makePaymentRequest && !customFields.makePaymentResponse) {
-        handlers.push(makePaymentHandler)
-    }
-
-    if (customFields.getVaultTokenRequest && !customFields.getVaultTokenResponse) {
-        handlers.push(getVaultTokenHandler)
-    }
-
-    if (customFields.getStandalone3dsTokenRequest && !customFields.getStandalone3dsTokenResponse) {
-        handlers.push(getStandaloneTokenHandler)
-    }
-
-    return handlers
-}
-
-
 function _validatePaymentRequest(paymentObject, authToken) {
     const paymentValidator = withPayment(paymentObject)
     paymentValidator.validateMetadataFields()
@@ -141,4 +87,4 @@ function _validatePaymentRequest(paymentObject, authToken) {
 }
 
 
-export default {handlePayment, handlePaymentByExtRequest}
+export default {handlePaymentByExtRequest}

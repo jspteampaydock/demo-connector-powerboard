@@ -65,7 +65,7 @@ class ValidationPowerBoardData {
             await this.validatePublicKey(publicKey, isToken);
             return await this.validateSecretKey(secret, isToken);
         } catch (error) {
-            throw new Error(error.message || 'Invalid Credentials.');
+            throw new Error('Invalid Credentials.');
         }
     }
 
