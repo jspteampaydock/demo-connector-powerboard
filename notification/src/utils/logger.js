@@ -1,25 +1,19 @@
-import bunyan from 'bunyan'
+import loggers from '@commercetools-backend/loggers';
 import config from '../config/config.js'
 
-const {logLevel} = config.getModuleConfig()
+const {createApplicationLogger} = loggers;
 
-let obj
+let loggerInstance;
 let logActions = [];
 
 function getLogger() {
-    if (obj === undefined) {
-        const NOTIFICATION_MODULE_NAME = 'ctp-powerboard-integration-notifications'
-        obj = bunyan.createLogger({
-            name: NOTIFICATION_MODULE_NAME,
-            stream: process.stdout,
-            level: logLevel || bunyan.INFO,
-            serializers: {
-                err: bunyan.stdSerializers.err,
-                cause: bunyan.stdSerializers.err,
-            },
-        })
+    if (!loggerInstance) {
+        loggerInstance = createApplicationLogger({
+            name: 'ctp-powerboard-integration-notifications',
+            level: config.getModuleConfig()?.logLevel || 'info',
+        });
     }
-    return obj
+    return loggerInstance;
 }
 
 function addPowerboardLog(data) {

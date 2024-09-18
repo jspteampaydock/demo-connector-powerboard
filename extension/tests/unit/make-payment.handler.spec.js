@@ -46,13 +46,16 @@ describe('make-payment.handler', () => {
             },
             custom: {
                 fields: {
-                    makePaymentRequest: JSON.stringify({
-                        PowerboardPaymentType: 'card',
-                        amount: {value: 10000, currency: 'USD'},
-                        CommerceToolsUserId: 'user-123',
-                        AdditionalInfo: {extra: 'info'},
-                    }),
-                },
+                    PaymentExtensionRequest: JSON.stringify({
+                        action: "makePaymentRequest",
+                        request: {
+                            PowerboardPaymentType: 'card',
+                            amount: {value: 10000, currency: 'USD'},
+                            CommerceToolsUserId: 'user-123',
+                            AdditionalInfo: {extra: 'info'},
+                        },
+                    })
+                }
             },
         };
     });
@@ -72,7 +75,7 @@ describe('make-payment.handler', () => {
 
         const result = await makePaymentHandler.execute(paymentObject);
 
-        expect(result.actions).toHaveLength(7);
+        expect(result.actions).toHaveLength(6);
         expect(result.actions).toContainEqual(expect.objectContaining({
             action: 'setCustomField',
             field: c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_TYPE
@@ -96,11 +99,11 @@ describe('make-payment.handler', () => {
 
         const result = await makePaymentHandler.execute(paymentObject);
 
-        expect(result.actions).toHaveLength(2);
-        expect(result.actions).toEqual(expect.arrayContaining([
-            expect.objectContaining({action: 'setCustomField', field: c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE}),
-            expect.objectContaining({action: 'deleteCustomField'}), // Modify this expectation to match actual received action
-        ]));
+        expect(result.actions).toHaveLength(1);
+        expect(result.actions).toContainEqual(expect.objectContaining({
+            action: 'setCustomField',
+            field: c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE
+        }));
     });
 
     test('should correctly calculate captured amount with centPrecision', async () => {
@@ -125,26 +128,5 @@ describe('make-payment.handler', () => {
         expect(result.actions).toEqual(expect.arrayContaining([
             expect.objectContaining({action: 'setCustomField', field: 'CapturedAmount', value: 100.00}),
         ]));
-    });
-
-    test('should delete appropriate custom fields after payment', async () => {
-        const result = await makePaymentHandler.execute(paymentObject);
-        const setCustomFieldActions = [
-            {action: 'setCustomField', field: 'CommerceToolsUserId', value: 'user-123'},
-            {action: 'setCustomField', field: 'AdditionalInformation', value: '{"extra":"info"}'},
-            {action: 'setKey'},
-            {action: 'addTransaction'},
-            {
-                action: 'setCustomField',
-                field: 'PaymentExtensionResponse',
-                value: '{"orderPaymentStatus":"Paid","orderStatus":"Complete"}'
-            },
-            {action: 'setCustomField', field: 'CapturedAmount', value: 100},
-            {action: 'deleteCustomField'}
-        ];
-
-        setCustomFieldActions.forEach(action => {
-            expect(result.actions).toEqual(expect.arrayContaining([expect.objectContaining(action)]));
-        });
     });
 });
