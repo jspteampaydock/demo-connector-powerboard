@@ -58,18 +58,27 @@ deployAs:
           required: true
         - key: POWERBOARD_API_LIVE_URL
           description: Powerboard api live url
+          default: 'https://api.powerboard.commbank.com.au'
           required: true
         - key: POWERBOARD_API_SANDBOX_URL
           description: Powerboard api sandbox url
+          default: 'https://api.preproduction.powerboard.commbank.com.au'
+          required: true
+        - key: POWERBOARD_API_STAGING_URL
+          description: Powerboard api staging url
+          default: 'https://api.staging.powerboard.commbank.com.au'
           required: true
         - key: POWERBOARD_WIDGET_TYPE_SDK
           description: Powerboard widget type sdk
+          default: 'preproduction_cba'
           required: true
         - key: POWERBOARD_WIDGET_URL
           description: Powerboard widget url
+          default: 'https://widget.powerboard.commbank.com.au/sdk/latest/widget.umd.js'
           required: true
         - key: POWERBOARD_WIDGET_TEST_URL
           description: Powerboard widget test url
+          default: 'https://widget.preproduction.powerboard.commbank.com.au/sdk/latest/widget.umd.js'
           required: true
   - name: notification
     applicationType: service
