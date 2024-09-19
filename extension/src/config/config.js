@@ -136,6 +136,5 @@ export default {
     getCtpClient,
     getWidgetConfig,
     getExtensionConfig,
-    getPowerboardApiUrl,
-    getAuthorizationHeaderValue
+    getPowerboardApiUrl
 }
