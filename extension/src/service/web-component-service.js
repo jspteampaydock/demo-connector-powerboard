@@ -1343,15 +1343,12 @@ async function getUserVaultTokens(user_id) {
     const result = [];
     try {
         const response = await ctpClient.fetchById(ctpClient.builder.customers, user_id);
-
         if (response?.body) {
             const userVaultTokens = response.body?.custom?.fields?.userVaultTokens ? JSON.parse(response.body?.custom?.fields?.userVaultTokens) : {};
-
             for (const value of Object.values(userVaultTokens)) {
                 result.push(value);
             }
         }
-
         return result;
     } catch (error) {
         logger.error(`Error in getUserVaultTokens: ${JSON.stringify(serializeError(error))}`);

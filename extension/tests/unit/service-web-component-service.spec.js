@@ -1,6 +1,5 @@
 import {expect, jest} from '@jest/globals';
 import * as serviceModule from '../../src/service/web-component-service.js';
-import {setItem} from '../../src/utils/custom-objects-utils.js';
 import {updateOrderPaymentState} from '../../src/service/ct-api-service.js';
 import {callPowerboard} from '../../src/service/powerboard-api-service.js';
 import config from '../../src/config/config.js';
@@ -12,7 +11,6 @@ jest.mock('../../src/config/config.js');
 jest.mock('../../src/utils.js');
 
 const  customerObject = jest.requireActual('../../test-data/customer-object.json');
-let ctpClient;
 
 jest.mock('@commercetools-backend/loggers', () => {
     return {
@@ -709,6 +707,40 @@ describe('web-component-service.js', () => {
         expect(callPowerboard).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'POST');
     });
 
+    test('should handle payment with Standalone 3DS through makePayment', async () => {
+
+
+        makePaymentRequestObj.VaultToken = 'new-vault-token';
+        makePaymentRequestObj.CommerceToolsUserId = 'user-123';
+        makePaymentRequestObj.PowerboardPaymentType = 'card';
+
+        const configurations = {
+            card_use_on_checkout: 'Yes',
+            card_3ds: 'Standalone 3DS',
+            card_fraud: 'In-built Fraud',
+            card_3ds_flow: 'With OTT',
+            card_direct_charge: 'Enable',
+            card_gateway_id: 'gateway-id-123',
+            card_3ds_service_id: '3ds-service-id',
+            card_fraud_service_id: 'fraud-service-id'
+        };
+
+        config.getPowerboardConfig.mockResolvedValue(configurations);
+
+        callPowerboard.mockResolvedValue({
+            response: {
+                status: 201,
+                resource: {data: {_id: 'charge-456'}},
+            },
+        });
+
+        const response = await serviceModule.makePayment(makePaymentRequestObj);
+
+        expect(response.status).toBe('Success');
+        expect(response.chargeId).toBe('charge-456');
+        expect(callPowerboard).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'POST');
+    });
+
     test('should handle payment with 3DS and Fraud through makePayment', async () => {
         makePaymentRequestObj.VaultToken = 'new-vault-token';
         makePaymentRequestObj.CommerceToolsUserId = 'user-123';
@@ -798,34 +830,7 @@ describe('web-component-service.js', () => {
         expect(response.chargeId).toBe('charge-456');
         expect(callPowerboard).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'POST');
     });
-    test('should handle payment with In-built Fraud and standalone 3DS through makePayment', async () => {
-        makePaymentRequestObj.VaultToken = 'new-vault-token';
-        makePaymentRequestObj.CommerceToolsUserId = 'user-123';
-        makePaymentRequestObj.PowerboardPaymentType = 'card';
 
-        const configurations = {
-            card_use_on_checkout: 'Yes',
-            card_3ds: 'Standalone 3DS',
-            card_fraud: 'In-built Fraud',
-            card_direct_charge: 'Enable',
-            card_gateway_id: 'gateway-id-123'
-        };
-
-        config.getPowerboardConfig.mockResolvedValue(configurations);
-
-        callPowerboard.mockResolvedValue({
-            response: {
-                status: 201,
-                resource: {data: {_id: 'charge-456'}},
-            },
-        });
-
-        const response = await serviceModule.makePayment(makePaymentRequestObj);
-
-        expect(response.status).toBe('Success');
-        expect(response.chargeId).toBe('charge-456');
-        expect(callPowerboard).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'POST');
-    });
     test('should handle payment with In-built 3DS through makePayment', async () => {
         makePaymentRequestObj.VaultToken = 'new-vault-token';
         makePaymentRequestObj.CommerceToolsUserId = 'user-123';
@@ -947,5 +952,18 @@ describe('web-component-service.js', () => {
         expect(callPowerboard).toHaveBeenCalledWith(expect.stringContaining('/v1/vault-tokens'), expect.any(Object), 'GET');
     });
 
+    test('test get user vault token', async () => {
+        mockCtpClient.fetchById.mockResolvedValue({
+            body: {
+                custom:{
+                    fields: {
+                        userVaultTokens: JSON.stringify({token: 'dcdcc8-80c5-41bb-abb5-ac8772c9cc24dcdcc8-80c5-41bb-abb5-ac8772c9cc24'})
+                    }
+                }
+            }
+        });
+        const response = await serviceModule.getUserVaultTokens("3cdcdcc8-80c5-41bb-abb5-ac8772c9cc24");
+        expect(response).toStrictEqual(['dcdcc8-80c5-41bb-abb5-ac8772c9cc24dcdcc8-80c5-41bb-abb5-ac8772c9cc24']);
+    });
 
 });

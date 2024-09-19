@@ -67,5 +67,6 @@ describe('Payment Handler', () => {
             expect(result.actions).toEqual(['getPaymentMethodsAction', deleteCustomFieldAction.mock.results[0].value]);
             expect(result.version).toBe(2);
         });
+
     });
 });

@@ -6,10 +6,6 @@
   "type": "module",
   "scripts": {
     "test": "jest --config jest.unit.config.js",
-    "test:watch": "jest --watch --config jest.config.js",
-    "test:all": "jest --config jest.config.js",
-    "integration": "jest --config jest.integration.config.js",
-    "e2e": "jest --config jest.e2e.config.js",
     "check-coverage": "jest --config jest.config.js --coverage",
     "start": "node ./src/init.js",
     "lint": "eslint --quiet ./src ./test",

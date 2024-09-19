@@ -38,11 +38,12 @@ This connector consists of three main components, each with its own set of envir
 
 | Variable                | Description                          | Required | Default           | Example                              |
 |-------------------------|--------------------------------------|----------|-------------------|--------------------------------------|
-| `CUSTOM_APPLICATION_ID`  | The Custom Application ID            | Yes      | N/A               | `CUSTOM_APPLICATION_ID=my-app-id`   |
-| `CLOUD_IDENTIFIER`       | The cloud identifier                 | No       | `gcp-eu`          | `CLOUD_IDENTIFIER=gcp-eu`            |
-| `ENTRY_POINT_URI_PATH`   | The application entry point URI path | Yes      | N/A               | `ENTRY_POINT_URI_PATH=/my-app`       |
-| `APP_REGION`             | The commercetools region             | Yes      | `europe-west1.gcp`| `APP_REGION=europe-west1.gcp`        |
-| `APP_PROJECT_KEY`        | The commercetools project key        | Yes      | N/A               | `APP_PROJECT_KEY=my-project-key`     |
+| `CUSTOM_APPLICATION_ID` | The Custom Application ID            | Yes      | N/A               | `CUSTOM_APPLICATION_ID=my-app-id`   |
+| `CLOUD_IDENTIFIER`      | The cloud identifier                 | No       | `gcp-eu`          | `CLOUD_IDENTIFIER=gcp-eu`            |
+| `ENTRY_POINT_URI_PATH`  | The application entry point URI path | Yes      | N/A               | `ENTRY_POINT_URI_PATH=/my-app`       |
+| `APP_REGION`            | The commercetools region             | Yes      | `europe-west1.gcp`| `APP_REGION=europe-west1.gcp`        |
+| `APP_PROJECT_KEY`       | The commercetools project key        | Yes      | N/A               | `APP_PROJECT_KEY=my-project-key`     |
+| `SANDBOX_API_URL`       | Powerboard API sandbox URL           | Yes      | N/A               | `SANDBOX_API_URL=https://sandbox-api.powerboard.com` |
 
 #### Secured Configuration Variables
 
@@ -57,16 +58,17 @@ This connector consists of three main components, each with its own set of envir
 
 #### Standard Configuration Variables
 
-| Variable                     | Description                   | Required | Default                                          | Example                                   |
-|------------------------------|-------------------------------|----------|--------------------------------------------------|-------------------------------------------|
-| `COMMERCETOOLS_PROJECT_KEY`  | The commercetools project key | Yes      | N/A                                              | `COMMERCETOOLS_PROJECT_KEY=my-project-key`|
-| `COMMERCETOOLS_API_URL`      | The commercetools API URL     | Yes      | `https://api.europe-west1.gcp.commercetools.com` | `COMMERCETOOLS_API_URL=https://api.commercetools.com` |
-| `COMMERCETOOLS_AUTH_URL`     | The commercetools Auth URL    | Yes      | `https://auth.europe-west1.gcp.commercetools.com` | `COMMERCETOOLS_AUTH_URL=https://auth.commercetools.com` |
-| `POWERBOARD_API_LIVE_URL`    | Powerboard API live URL       | Yes      | N/A                                              | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com` |
-| `POWERBOARD_API_SANDBOX_URL` | Powerboard API sandbox URL    | Yes      | N/A                                              | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com` |
-| `POWERBOARD_WIDGET_TYPE_SDK` | Widget type sdk               | Yes      | preproduction_cba                                                 | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com` |
-| `POWERBOARD_WIDGET_URL`      | Powerboard widget url         | Yes      | N/A                                              | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com` |
-| `POWERBOARD_WIDGET_TEST_URL` | Powerboard widget test url    | Yes      | N/A                                              | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com` |
+| Variable                     | Description                   | Required | Default                                           | Example                                                                     |
+|------------------------------|-------------------------------|----------|---------------------------------------------------|-----------------------------------------------------------------------------|
+| `COMMERCETOOLS_PROJECT_KEY`  | The commercetools project key | Yes      | N/A                                               | `COMMERCETOOLS_PROJECT_KEY=my-project-key`                                  |
+| `COMMERCETOOLS_API_URL`      | The commercetools API URL     | Yes      | `https://api.europe-west1.gcp.commercetools.com`  | `COMMERCETOOLS_API_URL=https://api.commercetools.com`                       |
+| `COMMERCETOOLS_AUTH_URL`     | The commercetools Auth URL    | Yes      | `https://auth.europe-west1.gcp.commercetools.com` | `COMMERCETOOLS_AUTH_URL=https://auth.commercetools.com`                     |
+| `POWERBOARD_API_LIVE_URL`    | Powerboard API live URL       | Yes      | N/A                                               | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com`                        |
+| `POWERBOARD_API_SANDBOX_URL` | Powerboard API sandbox URL    | Yes      | N/A                                               | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com`             |
+| `POWERBOARD_API_STAGING_URL` | Powerboard API staging URL    | Yes      | N/A                                               | `POWERBOARD_API_STAGING_URL=https://api.staging.powerboard.commbank.com.au` |
+| `POWERBOARD_WIDGET_TYPE_SDK` | Widget type sdk               | Yes      | preproduction_cba                                 | `POWERBOARD_WIDGET_TYPE_SDK=preproduction_cba`                              |
+| `POWERBOARD_WIDGET_URL`      | Powerboard widget url         | Yes      | N/A                                               | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com`                        |
+| `POWERBOARD_WIDGET_TEST_URL` | Powerboard widget test url    | Yes      | N/A                                               | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com`             |
 
 #### Secured Configuration Variables
 
@@ -81,13 +83,13 @@ This connector consists of three main components, each with its own set of envir
 
 #### Standard Configuration Variables
 
-| Variable                     | Description                    | Required | Default                                    | Example                                   |
-|------------------------------|--------------------------------|----------|--------------------------------------------|-------------------------------------------|
-| `COMMERCETOOLS_PROJECT_KEY`  | The commercetools project key  | Yes      | N/A                                        | `COMMERCETOOLS_PROJECT_KEY=my-project-key`|
-| `COMMERCETOOLS_API_URL`      | The commercetools API URL      | Yes      | `https://api.europe-west1.gcp.commercetools.com` | `COMMERCETOOLS_API_URL=https://api.commercetools.com` |
+| Variable                     | Description                    | Required | Default                                           | Example                                   |
+|------------------------------|--------------------------------|----------|---------------------------------------------------|-------------------------------------------|
+| `COMMERCETOOLS_PROJECT_KEY`  | The commercetools project key  | Yes      | N/A                                               | `COMMERCETOOLS_PROJECT_KEY=my-project-key`|
+| `COMMERCETOOLS_API_URL`      | The commercetools API URL      | Yes      | `https://api.europe-west1.gcp.commercetools.com`  | `COMMERCETOOLS_API_URL=https://api.commercetools.com` |
 | `COMMERCETOOLS_AUTH_URL`     | The commercetools Auth URL     | Yes      | `https://auth.europe-west1.gcp.commercetools.com` | `COMMERCETOOLS_AUTH_URL=https://auth.commercetools.com` |
-| `POWERBOARD_API_LIVE_URL`    | Powerboard API live URL        | Yes      | N/A                                        | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com` |
-| `POWERBOARD_API_SANDBOX_URL` | Powerboard API sandbox URL     | Yes      | N/A                                        | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com` |
+| `POWERBOARD_API_LIVE_URL`    | Powerboard API live URL        | Yes      | N/A                                               | `POWERBOARD_API_LIVE_URL=https://api.powerboard.com` |
+| `POWERBOARD_API_SANDBOX_URL` | Powerboard API sandbox URL     | Yes      | N/A                                               | `POWERBOARD_API_SANDBOX_URL=https://sandbox-api.powerboard.com` |
 
 #### Secured Configuration Variables
 
@@ -113,12 +115,6 @@ The default commercetools payment type does not include all the necessary fields
 | `SaveCard`                      | Save Card                         | Boolean   | SingleLine    | Indicates whether to save the card for future transactions              |
 | `VaultToken`                    | Vault token                       | String    | SingleLine    | Vault payment token representing user’s payment information             |
 | `AdditionalInformation`         | Additional information            | String    | MultiLine     | Any additional information relevant to the payment                      |
-| `getVaultTokenRequest`          | Vault token request               | String    | MultiLine     | Request for generating a vault token                                    |
-| `getStandalone3dsTokenRequest`  | Standalone 3DS token request      | String    | MultiLine     | Request for generating a 3DS token                                      |
-| `getStandalone3dsTokenResponse` | Standalone 3DS Token Response     | String    | MultiLine     | Response from Powerboard after generating a 3DS token                      |
-| `getVaultTokenResponse`         | Vault token response              | String    | MultiLine     | Response after generating a vault token                                 |
-| `makePaymentRequest`            | Payment request                   | String    | MultiLine     | Data sent to Powerboard to make a payment                                  |
-| `makePaymentResponse`           | Payment response                  | String    | MultiLine     | Response from Powerboard after attempting a payment                        |
 | `RefundedAmount`                | Refunded amount                   | Number    | SingleLine    | The amount refunded via Powerboard                                         |
 | `CapturedAmount`                | Captured amount                   | Number    | SingleLine    | The amount captured from the transaction                                |
 | `PaymentExtensionRequest`       | Payment extension request         | String    | MultiLine     | Request for generating various operations associated with the payment, such as updating status, retrieving payment methods, and other actions. |
