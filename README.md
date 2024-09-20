@@ -138,6 +138,48 @@ The `PowerboardPaymentStatus` field is an enum with the following possible value
 | `powerboard-p-paid`         | Partial paid via Powerboard             |
 
 
+### Operations that we can perform with the help custom fields `PaymentExtensionRequest`
+
+| Key                     | Label                    | Description                                                            |
+|-------------------------|------------------------------------|--------------------------|
+| `getPaymentMethodsRequest`     | Get all avaibel payment methods    |
+
+    Request: 
+        ...
+        custom: {
+            type: {
+                typeId: 'type',
+                key: "powerboard-components-payment-type"
+            },
+            fields: {
+                ...
+                PaymentExtensionRequest: JSON.stringify({
+                    action: "getPaymentMethodsRequest",
+                    request: {}
+                })
+            }
+        }
+
+    Response:
+        ...
+        custom: {
+            type: {
+                typeId: 'type',
+                key: "powerboard-components-payment-type"
+            },
+            fields: {
+                ...
+                PaymentExtensionResponse:"{"sandbox_mode":"Yes","api_credentials": ,"payment_methods":{"card":{"name":"powerboard-pay-card","type":"card","title":"card","card_direct_charge":"Disable","card_supported_card_schemes":[{"value":"ausbc","label":"Australian Bank Card"},{"value":"mastercard","label":"MasterCard"},.....}"
+            }
+        }
+
+|
+| `getVaultTokenRequest`         | Paid via Powerboard                |------------------------------------|
+| `getStandalone3dsTokenRequest` | Authorized via Powerboard          |------------------------------------|
+| `makePayment`           | Cancelled authorize via Powerboard |------------------------------------|
+| `makePreCharge`         | Refunded via Powerboard            |------------------------------------|
+| `updatePaymentStatus`   | Partial refunded via Powerboard    |------------------------------------|
+
 ## Additional Resources
 - [Powerboard Commercetools Widget](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-npm)
 - [Official Powerboard Website](https://www.commbank.com.au/)
