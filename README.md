@@ -160,10 +160,7 @@ The `PowerboardPaymentStatus` field is an enum with the following possible value
     },
     ....
     "fields": {
-      "PaymentExtensionRequest": JSON.stringify({
-          "action": "getPaymentMethodsRequest",
-          "request": {}
-        })
+      "PaymentExtensionRequest": '{"action":"getPaymentMethodsRequest","request":{}}'
     }
   }
 }
@@ -200,21 +197,7 @@ Response:
     },
     "fields": {
       ....
-      "PaymentExtensionRequest": JSON.stringify({
-          "action": "getVaultTokenRequest",
-          "request": {
-            "customerId": "*******",
-            "paymentMethod": {
-              "type": "card",
-              "cardDetails": {
-                "number": "********",
-                "expiryMonth": "12",
-                "expiryYear": "2025",
-                "cvv": "123"
-              }
-            }
-          }
-      })
+      "PaymentExtensionRequest": '{"action":"getVaultTokenRequest","request":{"customerId":"*******","paymentMethod":{"type":"card","cardDetails":{"number":"********","expiryMonth":"12","expiryYear":"2025","cvv":"123"}}}}'
     }
   }
 }
@@ -251,15 +234,7 @@ Response:
     },
     "fields": {
       ....
-      "PaymentExtensionRequest": JSON.stringify({
-          "action": "makePayment",
-          "request": {
-            "amount": 100,
-            "currency": "AUD",
-            "reference": "order-id-456",
-            "vaultToken": "vault-token-abc123",
-          }
-        })
+      "PaymentExtensionRequest": '{"action":"makePayment","request":{"amount":100,"currency":"AUD","reference":"order-id-456","vaultToken":"vault-token-abc123"}}'
     }
   }
 }
@@ -293,14 +268,7 @@ Response:
     },
     "fields": {
       ....
-      "PaymentExtensionRequest": JSON.stringify({
-          "action": "updatePaymentStatus",
-          "request": {
-            "orderId": "*******",
-            "newStatus": "powerboard-paid",
-            "newDate": "2024-09-20 12:07:10"
-          }
-        })
+      "PaymentExtensionRequest": '{"action":"updatePaymentStatus","request":{"orderId":"*******","newStatus":"powerboard-paid","newDate":"2024-09-20 12:07:10"}}'
     }
   }
 }
