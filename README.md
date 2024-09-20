@@ -152,14 +152,12 @@ The `PowerboardPaymentStatus` field is an enum with the following possible value
 **Request:**
 ```json
 {
-  // Other fields
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionRequest": "{\"action\":\"getPaymentMethodsRequest\",\"request\":{}}"
     }
   }
@@ -169,14 +167,12 @@ The `PowerboardPaymentStatus` field is an enum with the following possible value
 Response:
 ```json
 {
-  // Other fields
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionResponse": "{\"sandbox_mode\":\"Yes\",\"payment_methods\":{\"card\":{\"name\":\"powerboard-pay-card\",\"type\":\"card\",\"title\":\"Card\",\"card_supported_card_schemes\":[{\"value\":\"ausbc\",\"label\":\"Australian Bank Card\"},{\"value\":\"mastercard\",\"label\":\"MasterCard\"}]}}}"
     }
   }
@@ -191,14 +187,12 @@ Response:
 **Request:**
 ```json
 {
-  // Other fields
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionRequest": "{\"action\":\"getVaultTokenRequest\",\"request\":{\"customerId\":\"*******\",\"paymentMethod\":{\"type\":\"card\",\"cardDetails\":{\"number\":\"********\",\"expiryMonth\":\"12\",\"expiryYear\":\"2025\",\"cvv\":\"123\"}}}}"
     }
   }
@@ -208,14 +202,12 @@ Response:
 :
 ```json
 {
-  // Other fields
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionResponse": "{\"status\":\"Success\",\"vaultToken\":\"vault-token-abc123\"}"
     }
   }
@@ -228,14 +220,12 @@ Response:
 **Request:**
 ```json
 {
-  // Other fields
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionRequest": "{\"action\":\"makePayment\",\"request\":{\"amount\":100,\"currency\":\"AUD\",\"reference\":\"order-id-456\",\"vaultToken\":\"vault-token-abc123\"}}"
     }
   }
@@ -244,16 +234,14 @@ Response:
 
 Response:
 ```json
-{ 
-  // Other fields
+{
   "custom": {
-    "type": {
+    "type": { 
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
-      "PaymentExtensionResponse": {\"orderPaymentStatus\":\"Paid\",\"orderStatus\":\"Complete\"}"
+      "PaymentExtensionResponse": "{\"orderPaymentStatus\":\"Paid\",\"orderStatus\":\"Complete\"}"
     }
   }
 }
@@ -264,14 +252,13 @@ Response:
 
 **Request:**
 ```json
-{  // Other fields   
+{
   "custom": {
     "type": {
       "typeId": "type",
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionRequest": "{\"action\":\"updatePaymentStatus\",\"request\":{\"orderId\":\"*******\",\"newStatus\":\"powerboard-paid\",\"newDate\":\"2024-09-20 12:07:10\"}}"
     }
   }
@@ -280,7 +267,6 @@ Response:
 
 Response:
 ```json
-// Other fields
 {
   "custom": {
     "type": {
@@ -288,7 +274,6 @@ Response:
       "key": "powerboard-components-payment-type"
     },
     "fields": {
-      // Other custom fields
       "PaymentExtensionResponse": "{\"status\":true,\"message\":\"Status updated successfully\"}"
     }
   }
