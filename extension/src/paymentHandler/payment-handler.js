@@ -26,10 +26,10 @@ async function handlePaymentByExtRequest(paymentObject, authToken) {
     const paymentCustomFields = paymentObject?.custom?.fields;
     const paymentExtensionRequest = paymentCustomFields?.PaymentExtensionRequest ?? null;
     const additionalInformation = paymentCustomFields?.AdditionalInformation ?? null;
-    const objPaymentExtensionRequest = JSON.parse(paymentExtensionRequest);
-    if(objPaymentExtensionRequest === null){
+    if (paymentExtensionRequest === null) {
         return null
     }
+    const objPaymentExtensionRequest = JSON.parse(paymentExtensionRequest);
     const actionExtension = objPaymentExtensionRequest.action ?? null;
     const handlers = [];
     if (!actionExtension || (actionExtension === 'FromNotification' && additionalInformation)) return null
