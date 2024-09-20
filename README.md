@@ -149,7 +149,7 @@ The `PowerboardPaymentStatus` field is an enum with the following possible value
 
 ####  Get Available Payment Methods
 
-**Request:**
+Request:
 ```json
 {
   "custom": {
@@ -184,7 +184,7 @@ Response:
 ####  Get Vault Token Request
 
 
-**Request:**
+Request:
 ```json
 {
   "custom": {
@@ -198,8 +198,7 @@ Response:
   }
 }
 ```
-**Response:**
-:
+Response:
 ```json
 {
   "custom": {
@@ -217,7 +216,7 @@ Response:
 ####  Make Payment Request
 
 
-**Request:**
+Request:
 ```json
 {
   "custom": {
@@ -250,7 +249,7 @@ Response:
 
 ####  Update Payment Status
 
-**Request:**
+Request:
 ```json
 {
   "custom": {
